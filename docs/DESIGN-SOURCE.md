@@ -16,7 +16,7 @@ Inspected through the connected GitHub account: repository tree, global CSS, her
 | Green #176B28 / blue #087DB9 / charcoal #151A18 / ivory #F6F7F2  | Core theme with a softer light-green accent                   |
 | max-w-7xl / fluid 80–144px spacing / 80px header / small corners | Matching container, spacing, header and corner rhythm         |
 | Transparent hero header turning solid after scroll               | `components/layout/site-header.tsx`                           |
-| Animated desktop mega menu and full-screen mobile navigation     | Programme disclosure panel and native modal mobile dialog     |
+| Animated desktop mega menu and full-screen mobile navigation     | Hover/keyboard programme panel and native modal mobile dialog |
 | Cinematic hero, CSS masked headline / 2.6s photo settle          | `components/sections/hero.tsx`                                |
 | GSAP / ScrollTrigger hero parallax and section motion            | `components/motion/motion.tsx`                                |
 | Programme list with hover/focus photograph changes               | `components/sections/program-explorer.tsx`                    |
@@ -24,7 +24,7 @@ Inspected through the connected GitHub account: repository tree, global CSS, her
 | Light/dark editorial sections, split features and action panels  | Shared primitives and homepage composition                    |
 | Reduced motion and useful server-rendered content                | CSS media rules; content starts visible; direct contact links |
 
-The implementation adapts the public patterns into a smaller independent codebase; it does not copy EACH's CMS, authentication, database, staff console or operational configuration. This is design parity in visual language and composition, not a claim of pixel-perfect parity with a rendered EACH build.
+The implementation adapts the public patterns into a smaller independent codebase; it does not copy EACH's CMS, authentication, database, staff console or operational configuration. (Update, 27 October 2026: KCTF now has its own independent Neon/Prisma database for enquiries, designed for this project. Nothing was taken from EACH, and EACH was not modified. See `docs/DATABASE.md`.) This is design parity in visual language and composition, not a claim of pixel-perfect parity with a rendered EACH build.
 
 ## Twelve-part homepage rhythm
 

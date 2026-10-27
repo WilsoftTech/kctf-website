@@ -1,5 +1,5 @@
 import { PageHeader, Photo, CTA, Eyebrow } from "@/components/ui/primitives";
-import { programmes } from "@/content/site";
+import { content } from "@/content/repository";
 import { metadata } from "@/lib/seo";
 import Link from "next/link";
 export const generateMetadata = () =>
@@ -8,7 +8,8 @@ export const generateMetadata = () =>
     "Explore KCTF’s four intended focus areas: wildlife conservation, environmental protection, climate action, and justice and human rights.",
     "/programmes",
   );
-export default function Programmes() {
+export default async function Programmes() {
+  const programmes = await content.getProgrammes();
   return (
     <>
       <PageHeader

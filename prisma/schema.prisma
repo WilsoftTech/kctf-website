@@ -1,0 +1,84 @@
+// KCTF enquiry persistence. Connection URLs live in prisma.config.ts (CLI) and
+// src/server/db.ts (application); see docs/DATABASE.md before changing this file.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EnquiryTopic {
+  general
+  volunteer
+  partnership
+
+  @@map("enquiry_topic")
+}
+
+enum OutboxStatus {
+  pending
+  processing
+  sent
+  failed
+
+  @@map("outbox_status")
+}
+
+/// A visitor enquiry. Saved together with its outbox job in one transaction.
+model Enquiry {
+  id                   String        @id @default(uuid(7)) @db.Uuid
+  /// Client-generated key; uniqueness makes uncertain retries safe.
+  idempotencyKey       String        @unique @map("idempotency_key") @db.Uuid
+  /// SHA-256 of the normalised submission, used to detect key reuse with different content.
+  requestHash          String        @map("request_hash") @db.Char(64)
+  name                 String        @db.VarChar(100)
+  email                String        @db.VarChar(254)
+  topic                EnquiryTopic
+  message              String        @db.VarChar(3000)
+  /// Version of the privacy notice the visitor acknowledged.
+  privacyNoticeVersion String        @map("privacy_notice_version") @db.VarChar(32)
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  outbox               EmailOutbox[]
+
+  @@index([createdAt])
+  @@map("enquiries")
+}
+
+/// Durable email job. Claimed by workers with FOR UPDATE SKIP LOCKED and fenced by claim_token.
+model EmailOutbox {
+  id                String       @id @default(uuid(7)) @db.Uuid
+  enquiryId         String       @map("enquiry_id") @db.Uuid
+  enquiry           Enquiry      @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  kind              String       @db.VarChar(64)
+  status            OutboxStatus @default(pending)
+  attempts          Int          @default(0)
+  maxAttempts       Int          @default(8) @map("max_attempts")
+  nextAttemptAt     DateTime     @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  claimToken        String?      @map("claim_token") @db.Uuid
+  claimedAt         DateTime?    @map("claimed_at") @db.Timestamptz(3)
+  providerMessageId String?      @map("provider_message_id") @db.VarChar(128)
+  /// Sanitised error code only; never provider bodies or personal data.
+  lastError         String?      @map("last_error") @db.VarChar(120)
+  sentAt            DateTime?    @map("sent_at") @db.Timestamptz(3)
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([enquiryId, kind])
+  @@index([status, nextAttemptAt])
+  @@map("email_outbox")
+}
+
+/// Short-lived shared abuse counters. Keys are HMACs, never raw IP or email addresses.
+model RateLimitBucket {
+  key         String   @db.VarChar(80)
+  windowStart DateTime @map("window_start") @db.Timestamptz(3)
+  count       Int      @default(0)
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(3)
+
+  @@id([key, windowStart])
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}

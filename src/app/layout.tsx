@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Motion } from "@/components/motion/motion";
 import { site } from "@/content/site";
-import { siteUrl } from "@/lib/seo";
+import { indexable, siteUrl } from "@/lib/seo";
 import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -12,7 +12,9 @@ export const metadata: Metadata = {
     "Community-led conservation, climate resilience and human rights in Rukungiri, Uganda.",
   openGraph: { siteName: site.name, locale: "en_UG", type: "website" },
   twitter: { card: "summary_large_image" },
-  robots: process.env.SITE_URL
+  // Matches robots.txt and the sitemap: only a validated production deployment that
+  // sets SITE_INDEXING=index is indexable.
+  robots: indexable
     ? { index: true, follow: true }
     : { index: false, follow: false },
   icons: { icon: "/icon.svg" },

@@ -1,6 +1,6 @@
 import { PageHeader, Arrow } from "@/components/ui/primitives";
 import { EnquiryForm } from "@/components/sections/enquiry-form";
-import { enquiriesEnabled } from "@/lib/enquiries";
+import { enquiryConfig } from "@/server/config";
 import { site } from "@/content/site";
 import { metadata } from "@/lib/seo";
 export const dynamic = "force-dynamic";
@@ -16,6 +16,8 @@ export default async function Contact({
   searchParams: Promise<{ topic?: string }>;
 }) {
   const { topic } = await searchParams;
+  // Read at request time so configuration changes apply without a rebuild.
+  const enquiries = enquiryConfig();
   return (
     <>
       <PageHeader eyebrow="Contact" title="Let’s start something meaningful.">
@@ -56,7 +58,12 @@ export default async function Contact({
             </p>
           </div>
           <EnquiryForm
-            enabled={enquiriesEnabled()}
+            mode={enquiries.mode}
+            siteKey={
+              enquiries.mode === "online"
+                ? enquiries.config.turnstileSiteKey
+                : undefined
+            }
             initialTopic={
               topic === "volunteer" || topic === "partnership"
                 ? topic

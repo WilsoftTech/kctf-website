@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { site } from "@/content/site";
-export const siteUrl = process.env.SITE_URL || "http://localhost:3000";
+import { readSiteConfig } from "@/lib/site-config";
+// Evaluated once per build/server start. An invalid production SITE_URL fails the build.
+export const siteConfig = readSiteConfig();
+for (const warning of siteConfig.warnings) console.warn(`[site] ${warning}`);
+export const siteUrl = siteConfig.origin;
+export const indexable = siteConfig.indexable;
 export function metadata(
   title: string,
   description: string,

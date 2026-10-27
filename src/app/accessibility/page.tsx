@@ -42,10 +42,10 @@ export default function Accessibility() {
         <h2>Known limitations</h2>
         <p>
           Photography is illustrative. Enquiry forms require JavaScript for
-          validation; a direct email link remains available. When enabled,
-          anti-abuse verification depends on an external provider. Accessibility
-          is an ongoing process; this statement is not a claim of certified
-          compliance.
+          validation and spam protection; direct email and telephone links
+          remain available without it. When enabled, anti-abuse verification
+          depends on an external provider. Accessibility is an ongoing process;
+          this statement is not a claim of certified compliance.
         </p>
         <h2>Tell us about a barrier</h2>
         <p>

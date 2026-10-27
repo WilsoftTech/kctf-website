@@ -1226,10 +1226,27 @@ textarea {
 textarea {
   resize: vertical;
 }
-.enquiry-form > input,
-.enquiry-form > select,
-.enquiry-form > textarea {
+.enquiry-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.enquiry-fields:disabled {
+  opacity: 0.72;
+}
+.enquiry-fields > input,
+.enquiry-fields > select,
+.enquiry-fields > textarea {
   margin-bottom: 24px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .form-row {
   display: grid;
@@ -1275,6 +1292,44 @@ textarea {
   margin: 20px 0 0;
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+.enquiry-form .form-status:not(:empty) {
+  border-left: 2px solid var(--border);
+  padding: 6px 0 6px 16px;
+}
+.enquiry-form .form-status.received {
+  border-color: var(--green);
+}
+.enquiry-form .form-status.unconfirmed {
+  border-color: #b7791f;
+}
+.enquiry-form .form-status.failed {
+  border-color: #ad271e;
+}
+.enquiry-form .form-status:focus {
+  outline: none;
+}
+.enquiry-form .form-status:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 4px;
+}
+.form-notice {
+  border-left: 2px solid #b7791f;
+  padding: 8px 0 8px 16px;
+  font-size: 14px;
+}
+.turnstile {
+  min-height: 65px;
+  margin-bottom: 8px;
+}
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .honeypot {
   position: absolute;

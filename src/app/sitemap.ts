@@ -1,21 +1,12 @@
 import type { MetadataRoute } from "next";
-import { siteUrl } from "@/lib/seo";
-export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    "/",
-    "/about",
-    "/programmes",
-    "/projects",
-    "/projects/community-lion-conservation",
-    "/get-involved",
-    "/contact",
-    "/privacy",
-    "/terms",
-    "/accessibility",
-    "/credits",
-  ].map((path) => ({
-    url: new URL(path, siteUrl).href,
-    changeFrequency: "monthly",
-    priority: path === "/" ? 1 : 0.7,
+import { content } from "@/content/repository";
+import { indexable, siteUrl } from "@/lib/seo";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Non-indexable deployments publish an empty sitemap, matching robots and metadata.
+  if (!indexable) return [];
+  return (await content.getPublicRoutes()).map((route) => ({
+    url: new URL(route.path, siteUrl).href,
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
   }));
 }

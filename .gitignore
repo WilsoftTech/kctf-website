@@ -3,3 +3,9 @@ node_modules/
 .env*
 !.env.example
 *.tsbuildinfo
+# Generated Prisma client (rebuilt by `prisma generate` on install)
+src/generated/
+# Test artefacts and disposable databases
+.test-db/
+test-results/
+playwright-report/
