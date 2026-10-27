@@ -186,11 +186,11 @@ export default function Home() {
               Justice & human rights <Arrow diagonal />
             </Link>
           </div>
-          <Photo photo="lake" />
+          <Photo photo="culture" />
         </div>
       </section>
       <section className="full-image dark">
-        <Photo photo="wetland" />
+        <Photo photo="culture" />
         <div className="container">
           <Eyebrow>People and nature, together</Eyebrow>
           <h2>

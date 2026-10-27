@@ -59,3 +59,7 @@ Five credited Commons landscape photographs were obtained from EACH's public ima
 https://commons.wikimedia.org/wiki/File:Lion_in_Queen_Elizabeth_National_Park_Uganda_01.jpg
 
 Original source metadata identifies a lion in Queen Elizabeth National Park and CC0 dedication. All photos illustrate themes; no official partnership, KCTF field activity or ownership is implied. The photo registry in `src/content/site.ts` is the source of visible attribution.
+
+## Photography replacement — 27 October 2026
+
+The initial photo reuse described above is historical. The audit branch removes all six initial KCTF photos and replaces them with a separately sourced western Uganda set: Rubirizi landscapes, Lake Rutoto, Kisiizi Falls heritage, Ishasha lions and Bakiga Ekizino dance in Kanungu. Current attribution and source links are maintained in `src/content/site.ts` and `/credits`. The original EACH repository is unchanged. See `docs/AUDIT-2026-10-27.md` for remaining launch requirements.

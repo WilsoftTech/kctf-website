@@ -14,8 +14,8 @@ export default function Credits() {
   return (
     <>
       <PageHeader eyebrow="Image credits" title="Seen through their eyes.">
-        With acknowledgement to the photographers whose work illustrates
-        Uganda’s landscapes and wildlife.
+        With acknowledgement to the photographers whose work illustrates western
+        Uganda’s landscapes, wildlife and cultural heritage.
       </PageHeader>
       <div className="container legal credits-list">
         <p>

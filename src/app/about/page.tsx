@@ -23,7 +23,7 @@ export default function About() {
         A shared commitment to the communities and natural landscapes of Kigezi.
       </PageHeader>
       <div className="container about-landscape">
-        <Photo photo="lake" priority />
+        <Photo photo="heritage" priority />
       </div>
       <section className="section">
         <div className="container split">

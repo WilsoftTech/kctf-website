@@ -18,7 +18,7 @@ const chapters: {
     title: "Conservation starts with listening.",
     label: "The people",
     body: "Our intended approach begins with residents, local leaders, women, young people and trusted elders. Their experiences should shape practical conservation education and decisions about shared natural resources.",
-    image: "forest",
+    image: "culture",
   },
   {
     title: "Coexistence is a shared responsibility.",

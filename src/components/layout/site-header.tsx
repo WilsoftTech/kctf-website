@@ -16,8 +16,19 @@ export function SiteHeader() {
   );
   const [mobile, setMobile] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
+  const trigger = useRef<HTMLAnchorElement>(null);
   const root = useRef<HTMLElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hoverOpen = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  // Short grace period so the pointer can travel from the trigger into the panel.
+  const hoverClose = () => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  };
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
   const hero = pathname === "/" || pathname.startsWith("/projects/");
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 40);
@@ -88,13 +99,22 @@ export function SiteHeader() {
           >
             {navigation.map((item) =>
               item.href === "/programmes" ? (
-                <div className="nav-group" key={item.href}>
-                  <button
+                <div
+                  className="nav-group"
+                  key={item.href}
+                  onPointerEnter={(e) =>
+                    e.pointerType === "mouse" && hoverOpen()
+                  }
+                  onPointerLeave={(e) =>
+                    e.pointerType === "mouse" && hoverClose()
+                  }
+                >
+                  <Link
                     ref={trigger}
-                    type="button"
+                    href={item.href}
                     aria-expanded={open}
-                    aria-controls={open ? "programmes-menu" : undefined}
-                    onClick={() => setOpen(!open)}
+                    aria-controls="programmes-menu"
+                    onClick={() => setOpen(false)}
                     onKeyDown={(e) => {
                       if (e.key === "ArrowDown") {
                         e.preventDefault();
@@ -114,43 +134,45 @@ export function SiteHeader() {
                     <span className="chevron" aria-hidden="true">
                       ⌄
                     </span>
-                  </button>
-                  {open && (
-                    <div id="programmes-menu" className="mega-menu">
-                      <div className="container mega-grid">
-                        <div>
-                          <p className="eyebrow">Four connected pillars</p>
-                          <h2>
-                            A shared future.
-                            <br />A common purpose.
-                          </h2>
+                  </Link>
+                  <div
+                    id="programmes-menu"
+                    className={`mega-menu ${open ? "open" : ""}`}
+                    inert={!open}
+                  >
+                    <div className="container mega-grid">
+                      <div>
+                        <p className="eyebrow">Four connected pillars</p>
+                        <h2>
+                          A shared future.
+                          <br />A common purpose.
+                        </h2>
+                        <Link
+                          href="/programmes"
+                          onClick={() => setOpen(false)}
+                          className="text-link"
+                        >
+                          Explore all programmes <Arrow />
+                        </Link>
+                      </div>
+                      <div className="mega-links">
+                        {programmes.map((p, i) => (
                           <Link
-                            href="/programmes"
+                            href={`/programmes#${p.id}`}
+                            key={p.id}
                             onClick={() => setOpen(false)}
-                            className="text-link"
                           >
-                            Explore all programmes <Arrow />
+                            <span className="index">0{i + 1}</span>
+                            <span>
+                              <strong>{p.name}</strong>
+                              <small>{p.summary}</small>
+                            </span>
+                            <Arrow diagonal />
                           </Link>
-                        </div>
-                        <div className="mega-links">
-                          {programmes.map((p, i) => (
-                            <Link
-                              href={`/programmes#${p.id}`}
-                              key={p.id}
-                              onClick={() => setOpen(false)}
-                            >
-                              <span className="index">0{i + 1}</span>
-                              <span>
-                                <strong>{p.name}</strong>
-                                <small>{p.summary}</small>
-                              </span>
-                              <Arrow diagonal />
-                            </Link>
-                          ))}
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <Link

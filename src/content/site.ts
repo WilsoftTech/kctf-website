@@ -66,7 +66,7 @@ export const programmes = [
     id: "justice",
     name: "Justice & Human Rights",
     short: "People",
-    image: "wetland",
+    image: "culture",
     summary: "Dignity, inclusion and a meaningful voice in the future.",
     body: "Our constitution places dignity, non-discrimination and participation at the heart of community transformation. We aim to promote environmental justice, peaceful dialogue and referral to competent institutions for lawful support.",
     activities: [
@@ -77,7 +77,7 @@ export const programmes = [
   },
 ] as const;
 export type PhotoKey =
-  "hero" | "lake" | "forest" | "savanna" | "wetland" | "lion";
+  "heritage" | "hero" | "lake" | "forest" | "savanna" | "culture" | "lion";
 export const photos: Record<
   PhotoKey,
   {
@@ -91,63 +91,73 @@ export const photos: Record<
   }
 > = {
   hero: {
-    src: "/images/hero-bwindi-mist.jpg",
-    alt: "Mist drifts across forested hills in Bwindi, Uganda.",
-    caption: "Bwindi Impenetrable Forest, Uganda",
-    author: "Giles Laurent",
+    src: "/images/rubirizi-highlands.jpg",
+    alt: "Cultivated land, trees and layered hills in Rubirizi, western Uganda.",
+    caption: "Rubirizi, western Uganda",
+    author: "NANTUMBWEJ",
     source:
-      "https://commons.wikimedia.org/wiki/File:063_Mist_rising_from_the_Bwindi_Impenetrable_Forest_National_Park_Photo_by_Giles_Laurent.jpg",
+      "https://commons.wikimedia.org/wiki/File:Varied_Landscape_of_Rubirizi_Near_Queen_Elizabeth_National_Park,_Uganda.jpg",
+    license: "CC BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  heritage: {
+    src: "/images/kisiizi-falls.jpg",
+    alt: "A heritage monument stands beside Kisiizi Falls in Rukungiri.",
+    caption: "Kisiizi Falls, Rukungiri District, Uganda",
+    author: "Shaayflix Dr Shaay",
+    source: "https://commons.wikimedia.org/wiki/File:Kisiizi_falls_04.jpg",
     license: "CC BY-SA 4.0",
     licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
   },
   lake: {
-    src: "/images/lake-bunyonyi-hills.jpg",
-    alt: "Terraced green hills above Lake Bunyonyi in south-western Uganda.",
-    caption: "Lake Bunyonyi, Kabale District, Uganda",
-    author: "Sjoerdug",
+    src: "/images/lake-rutoto.jpg",
+    alt: "Green vegetation borders Lake Rutoto in western Uganda.",
+    caption: "Lake Rutoto, Rubirizi District, Uganda",
+    author: "Cn22760",
     source:
-      "https://commons.wikimedia.org/wiki/File:View_of_Lake_Bunyonyi_in_Kabaale_District.jpg",
+      "https://commons.wikimedia.org/wiki/File:Lake_Rutoto,_Rubirizi_District.jpg",
     license: "CC BY-SA 4.0",
     licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
   },
   forest: {
-    src: "/images/budongo-forest-tree.jpg",
-    alt: "A tall buttressed tree reaches into the canopy of Budongo Forest.",
-    caption: "Budongo Forest, Uganda",
-    author: "Dror Feitelson",
-    source: "https://commons.wikimedia.org/wiki/File:Budongo_forest.jpg",
-    license: "CC BY-SA 3.0",
-    licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
-  },
-  savanna: {
-    src: "/images/kidepo-valley-savanna.jpg",
-    alt: "Open savanna and distant mountains in Kidepo Valley National Park.",
-    caption: "Kidepo Valley National Park, Uganda",
-    author: "Sandra Aceng",
+    src: "/images/rubirizi-landscape.jpg",
+    alt: "Sunlight breaks through clouds over the green landscape of Rubirizi.",
+    caption: "Rubirizi, western Uganda, Uganda",
+    author: "NANTUMBWEJ",
     source:
-      "https://commons.wikimedia.org/wiki/File:Landscape_of_Kidepo_Valley_National_Park_in_Uganda.jpg",
+      "https://commons.wikimedia.org/wiki/File:Sunlit_Skies_over_Rubirizi,_Near_Queen_Elizabeth_National_Park,_Uganda_01.jpg",
     license: "CC BY-SA 4.0",
     licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
   },
-  wetland: {
-    src: "/images/papyrus-swamp-fog.jpg",
-    alt: "Morning mist settles over papyrus reeds in western Uganda.",
-    caption: "Papyrus wetland, western Uganda",
-    author: "BalukuBrian",
+  savanna: {
+    src: "/images/ishasha-lions.jpg",
+    alt: "Lions rest in the branches of a fig tree in Ishasha, western Uganda.",
+    caption: "Ishasha, Queen Elizabeth National Park, Uganda",
+    author: "Charles J. Sharp",
     source:
-      "https://commons.wikimedia.org/wiki/File:Fog_over_papyrus_reeds_in_a_swamp_in_western_Uganda.jpg",
+      "https://commons.wikimedia.org/wiki/File:Tree-climbing_lions_(Panthera_leo)_in_sycamore_fig_(Ficus_sycomorus).jpg",
+    license: "CC BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  culture: {
+    src: "/images/bakiga-ekizino-kanungu.jpg",
+    alt: "Bakiga women perform the traditional Ekizino dance in Kanungu.",
+    caption: "Bakiga Ekizino dance, Kanungu, Uganda",
+    author: "Owobusingye",
+    source:
+      "https://commons.wikimedia.org/wiki/File:Bakiga_women_dancing_Ekizino_traditional_dance_for_guests_in_Kanungu.jpeg",
     license: "CC BY-SA 4.0",
     licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
   },
   lion: {
-    src: "/images/lion-queen-elizabeth.jpg",
-    alt: "A lion rests in the vegetation of Queen Elizabeth National Park, Uganda.",
-    caption: "Queen Elizabeth National Park, Uganda",
-    author: "Alvinategyeka",
+    src: "/images/ishasha-lions.jpg",
+    alt: "Lions rest in the branches of a fig tree in Ishasha, western Uganda.",
+    caption: "Ishasha, Queen Elizabeth National Park, Uganda",
+    author: "Charles J. Sharp",
     source:
-      "https://commons.wikimedia.org/wiki/File:Lion_in_Queen_Elizabeth_National_Park_Uganda_01.jpg",
-    license: "CC0 1.0",
-    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+      "https://commons.wikimedia.org/wiki/File:Tree-climbing_lions_(Panthera_leo)_in_sycamore_fig_(Ficus_sycomorus).jpg",
+    license: "CC BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
   },
 };
 export const targets = [
