@@ -131,9 +131,6 @@ export function SiteHeader() {
                     className={pathname.startsWith(item.href) ? "active" : ""}
                   >
                     {item.label}
-                    <span className="chevron" aria-hidden="true">
-                      ⌄
-                    </span>
                   </Link>
                   <div
                     id="programmes-menu"

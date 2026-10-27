@@ -339,14 +339,6 @@ button:hover .arrow {
 .nav-group > a.active:after {
   transform: scaleX(1);
 }
-.chevron {
-  font-size: 18px;
-  line-height: 1;
-  transition: transform 0.3s;
-}
-.nav-group > a[aria-expanded="true"] .chevron {
-  transform: rotate(180deg);
-}
 .header-action {
   display: flex;
   align-items: center;
