@@ -36,7 +36,7 @@ describe("enquiry validation", () => {
     { message: "short" },
     { consent: false },
     { website: "spam" },
-    { topic: "donation" },
+    { topic: "payment" },
     { extra: "untrusted" },
     { idempotencyKey: "not-a-uuid" },
     { idempotencyKey: undefined },
@@ -45,6 +45,20 @@ describe("enquiry validation", () => {
       false,
     ),
   );
+  it.each(["general", "volunteer", "partnership", "donation"])(
+    "accepts the %s topic",
+    (topic) =>
+      expect(enquirySchema.safeParse({ ...valid, topic }).success).toBe(true),
+  );
+  it("rejects payment fields on a donation enquiry", () =>
+    expect(
+      enquirySchema.safeParse({
+        ...valid,
+        topic: "donation",
+        amount: 50,
+        currency: "UGX",
+      }).success,
+    ).toBe(false));
   it("rejects excessive message lengths", () =>
     expect(
       enquirySchema.safeParse({ ...valid, message: "x".repeat(3001) }).success,

@@ -1,5 +1,25 @@
 # Verification report
 
+## Donations branch: 27 October 2026
+
+Branch `feature/donations-page` (from `production-readiness-neon-outbox`), verified locally on Windows 11. No test contacted Neon, Resend or Cloudflare, no real email was sent, and no payment was initiated. Nothing was deployed or merged.
+
+| Check                                     | Command                    | Result                                                                                      |
+| ----------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| TypeScript                                | `npm run typecheck`        | Passed                                                                                      |
+| ESLint                                    | `npm run lint`             | Passed                                                                                      |
+| Prettier                                  | `npm run format:check`     | Passed                                                                                      |
+| Unit tests                                | `npm test`                 | 129 passed (5 files)                                                                        |
+| Database integration tests                | `npm run test:integration` | 35 passed (4 files), including the new migration applied to an empty database without drift |
+| Browser tests (desktop 1440×900, Pixel 7) | `npm run test:e2e`         | 59 passed, 11 skipped (viewport-specific tests)                                             |
+| Production build (default settings)       | `npm run build`            | Passed; `/donate` is dynamic, like `/contact`                                               |
+
+New coverage: the `donation` topic is accepted while unknown topics and payment fields (amount, currency) are rejected. The donation staff notification has a "Donation" subject and a no-payment statement. A donation enquiry is persisted with its topic and an outbox job, and its message says that no payment was made or taken. In the browser, a donation enquiry from `/donate` is saved, notified and shows no payment-success wording, and a failed donation enquiry never reports success. Every donation CTA on the homepage links to `/donate`. The desktop header Donate button is keyboard-operable, at least 44px tall and marked `aria-current` on `/donate`. The mobile menu Donate CTA navigates and closes the dialog. The small-screen header hides the pill. FAQ items open from the keyboard. The page has no card or amount inputs. There is no horizontal overflow on `/`, `/donate` or `/contact` on mobile, and axe finds no violations on `/donate` at both viewports. Header layout at 1024px and 1280px and page layout at 390px were also checked from screenshots.
+
+Not verified: real Neon, Resend and Turnstile behaviour (as below), screen readers, physical devices and OS reduced-motion mode.
+
+---
+
 ## Production-readiness branch: 27 October 2026
 
 Branch `production-readiness-neon-outbox`, verified locally on Windows 11 with Node.js 24.22.1. Database tests used an embedded PostgreSQL 18.4 server created and deleted by the test harness. No test contacted Neon, Resend or Cloudflare; Turnstile and Resend were replaced by local doubles or mocks, and no real email was sent. CI was not investigated (out of scope).

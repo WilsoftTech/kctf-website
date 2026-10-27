@@ -6,11 +6,13 @@ import {
   Arrow,
   Button,
   CTA,
+  DonateButton,
   Eyebrow,
   Heading,
   Photo,
 } from "@/components/ui/primitives";
 import { targets } from "@/content/site";
+import { homeDonation } from "@/content/donate";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
@@ -237,6 +239,29 @@ export default function Home() {
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+      <section
+        className="section muted-surface home-donate"
+        aria-labelledby="home-donate"
+      >
+        <div className="container split reverse" data-reveal>
+          <div>
+            <Heading
+              id="home-donate"
+              eyebrow={homeDonation.eyebrow}
+              title={homeDonation.title}
+            />
+            <p>{homeDonation.body}</p>
+            <div className="actions">
+              <DonateButton label="Donate" />
+              <Link href="/donate#give" className="text-link">
+                How giving works <Arrow diagonal />
+              </Link>
+            </div>
+            <p className="small muted">{homeDonation.note}</p>
+          </div>
+          <Photo photo={homeDonation.photo} />
         </div>
       </section>
       <section className="section">

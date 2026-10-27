@@ -2,6 +2,7 @@
 // HTML-escaped in the HTML part, never in the subject or sender. The visitor's address
 // is the Reply-To; the sender is always the verified ENQUIRY_FROM mailbox.
 import type { DeliveryConfig } from "@/server/config";
+import type { EnquiryTopic } from "@/validation/enquiry";
 
 export const STAFF_NOTIFICATION = "staff-notification";
 
@@ -9,7 +10,7 @@ export type NotificationEnquiry = {
   id: string;
   name: string;
   email: string;
-  topic: "general" | "volunteer" | "partnership";
+  topic: EnquiryTopic;
   message: string;
   createdAt: Date;
 };
@@ -18,7 +19,12 @@ const topicLabels = {
   general: "General",
   volunteer: "Volunteering",
   partnership: "Partnership",
-} as const;
+  donation: "Donation",
+} as const satisfies Record<EnquiryTopic, string>;
+
+// Donations cannot be paid through the website; staff must not read the enquiry as a gift.
+const donationNote =
+  "This is an enquiry about donating. No payment was requested or taken by the website.";
 
 export function enquiryReference(id: string) {
   return `KCTF-${id.replace(/-/g, "").slice(-8).toUpperCase()}`;
@@ -49,6 +55,7 @@ export function buildStaffNotification(
     `Name: ${enquiry.name}`,
     `Email: ${enquiry.email}`,
     "",
+    ...(enquiry.topic === "donation" ? [donationNote, ""] : []),
     enquiry.message,
     "",
     "The visitor acknowledged the website privacy notice.",
@@ -65,6 +72,7 @@ export function buildStaffNotification(
     row("Name", enquiry.name),
     row("Email", enquiry.email),
     `</table>`,
+    ...(enquiry.topic === "donation" ? [`<p>${donationNote}</p>`] : []),
     `<p style="white-space:pre-wrap">${escapeHtml(enquiry.message)}</p>`,
     `<p>The visitor acknowledged the website privacy notice. Reply to this email to respond to the visitor directly.</p>`,
   ].join("\n");

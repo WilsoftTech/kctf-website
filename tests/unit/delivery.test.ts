@@ -48,6 +48,18 @@ describe("staff notification", () => {
   });
   it("includes an unescaped plain-text part", () =>
     expect(email.text).toContain(enquiry.message));
+  it("marks donation enquiries as involving no payment", () => {
+    const donation = buildStaffNotification(
+      { ...enquiry, topic: "donation" },
+      delivery,
+    );
+    expect(donation.subject).toBe(
+      `KCTF website enquiry: Donation (${enquiryReference(enquiry.id)})`,
+    );
+    expect(donation.text).toContain("No payment was requested or taken");
+    expect(donation.html).toContain("No payment was requested or taken");
+    expect(email.text).not.toContain("No payment");
+  });
   it("derives a short stable reference", () =>
     expect(enquiryReference(enquiry.id)).toBe("KCTF-0000ABCD"));
 });

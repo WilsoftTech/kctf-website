@@ -17,7 +17,7 @@ const turnstileStub = `
     remove() {},
   };`;
 
-async function openContact(page: Page, token?: string) {
+async function openContact(page: Page, token?: string, path = "/contact") {
   if (token)
     await page.addInitScript(
       (t) => ((window as unknown as { __nextToken: string }).__nextToken = t),
@@ -29,7 +29,7 @@ async function openContact(page: Page, token?: string) {
       body: turnstileStub,
     }),
   );
-  await page.goto("/contact");
+  await page.goto(path);
 }
 
 async function fill(page: Page, email: string) {
@@ -41,21 +41,22 @@ async function fill(page: Page, email: string) {
   await page.getByLabel(/I have read the/).check();
 }
 
-async function count(email: string) {
+async function topics(email: string) {
   const client = new pg.Client({
     connectionString: process.env.E2E_DATABASE_URL,
   });
   await client.connect();
   try {
     const { rows } = await client.query(
-      "SELECT count(*)::int AS n FROM enquiries WHERE email = $1",
+      "SELECT topic::text FROM enquiries WHERE email = $1",
       [email],
     );
-    return rows[0].n as number;
+    return rows.map((r) => r.topic as string);
   } finally {
     await client.end();
   }
 }
+const count = async (email: string) => (await topics(email)).length;
 
 const unique = (label: string) =>
   `${label}-${test.info().project.name}-${Date.now()}@example.com`;
@@ -95,6 +96,45 @@ test("saves an enquiry, reports it as received and queues the notification", asy
           .count,
     )
     .toBeGreaterThan(before);
+});
+
+test("saves a donation enquiry from /donate without claiming a payment", async ({
+  page,
+}) => {
+  const email = unique("donation");
+  const before = (
+    await (await fetch(`${process.env.E2E_DOUBLES_URL}/__emails`)).json()
+  ).count;
+  await openContact(page, undefined, "/donate");
+  await expect(page.getByLabel("I’d like to talk about")).toHaveValue(
+    "donation",
+  );
+  await fill(page, email);
+  await page.getByRole("button", { name: "Send enquiry" }).click();
+  await expect(status(page)).toContainText("donation enquiry");
+  await expect(status(page)).toContainText("No payment has been made or taken");
+  await expect(status(page)).toContainText(/KCTF-[0-9A-F]{8}/);
+  await expect(status(page)).not.toContainText(
+    /thank you for your donation|payment (was )?(successful|received)/i,
+  );
+  expect(await topics(email)).toEqual(["donation"]);
+  await expect
+    .poll(
+      async () =>
+        (await (await fetch(`${process.env.E2E_DOUBLES_URL}/__emails`)).json())
+          .count,
+    )
+    .toBeGreaterThan(before);
+});
+
+test("a failed donation enquiry never reports success", async ({ page }) => {
+  const email = unique("donation-outage");
+  await openContact(page, "e2e-outage", "/donate");
+  await fill(page, email);
+  await page.getByRole("button", { name: "Send enquiry" }).click();
+  await expect(status(page)).toContainText("was not saved");
+  await expect(status(page)).not.toContainText(/received|thank you/i);
+  expect(await count(email)).toBe(0);
 });
 
 test("shows field errors and focuses the first invalid field", async ({

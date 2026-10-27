@@ -73,13 +73,20 @@ export function requestHash(e: Enquiry) {
     .digest("hex");
 }
 
-function received(id: string, replay: boolean): SubmitResult {
+function received(
+  id: string,
+  replay: boolean,
+  topic: Enquiry["topic"],
+): SubmitResult {
   return result(replay ? 200 : 201, {
     state: "received",
     reference: enquiryReference(id),
     replay,
+    // A donation enquiry is a conversation, never a payment: say so explicitly.
     message:
-      "Thank you — your enquiry has been received and saved. The foundation will reply by email.",
+      topic === "donation"
+        ? "Thank you — your donation enquiry has been received and saved. No payment has been made or taken. The foundation will reply by email."
+        : "Thank you — your enquiry has been received and saved. The foundation will reply by email.",
   });
 }
 
@@ -98,7 +105,7 @@ async function findExisting(db: Database, data: Enquiry) {
   });
   if (!existing) return undefined;
   return existing.requestHash === requestHash(data)
-    ? received(existing.id, true)
+    ? received(existing.id, true, data.topic)
     : conflict();
 }
 
@@ -226,7 +233,7 @@ export async function submitEnquiry(
       return saved;
     });
     log("info", "enquiry_saved", { enquiryId: enquiry.id });
-    return { ...received(enquiry.id, false), queued: true };
+    return { ...received(enquiry.id, false, data.topic), queued: true };
   } catch (error) {
     // A concurrent request with the same key committed first.
     if ((error as { code?: string })?.code === "P2002") {

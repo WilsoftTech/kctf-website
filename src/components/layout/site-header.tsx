@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { navigation, programmes } from "@/content/site";
-import { Arrow } from "@/components/ui/primitives";
+import { Arrow, DonateButton } from "@/components/ui/primitives";
 export function SiteHeader() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -183,9 +183,12 @@ export function SiteHeader() {
               ),
             )}
           </nav>
-          <Link href="/get-involved" className="header-action">
-            Let’s connect <Arrow diagonal />
-          </Link>
+          <div className="header-ctas">
+            <Link href="/get-involved" className="header-action">
+              Let’s connect <Arrow diagonal />
+            </Link>
+            <DonateButton current={pathname === "/donate"} />
+          </div>
           <button
             className="menu-toggle"
             onClick={() => {
@@ -231,6 +234,12 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <DonateButton
+          className="mobile-donate"
+          label="Donate to KCTF"
+          current={pathname === "/donate"}
+          onClick={closeMobile}
+        />
         <p>
           Rooted in Kigezi.
           <br />

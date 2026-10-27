@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { navigation, site } from "@/content/site";
+import { Heart } from "@/components/ui/primitives";
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -28,6 +29,10 @@ export function SiteFooter() {
                   {n.label}
                 </Link>
               ))}
+              <Link href="/donate" className="footer-donate">
+                <Heart />
+                Donate
+              </Link>
             </nav>
           </div>
           <div className="footer-contact">

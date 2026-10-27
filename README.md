@@ -18,7 +18,7 @@ Browser ── /contact form ──► POST /api/enquiries
                         outbox worker ──── Idempotency-Key ──► Resend ──► staff inbox (Reply-To: visitor)
 ```
 
-- Public pages are static except `/contact` and `/privacy`, which render per request so configuration changes apply without a rebuild.
+- Public pages are static except `/contact`, `/donate` and `/privacy`, which render per request so configuration changes apply without a rebuild.
 - Public content is separated from presentation behind `src/content/repository.ts` so a future CMS can replace the static source.
 - Server-only code lives in `src/server/` and imports `server-only`.
 
@@ -89,6 +89,10 @@ See `docs/OPERATIONS.md`. Summary:
 - **Abuse controls:** origin check, 16 KB streamed cap, strict validation, honeypot, Turnstile (hostname and action), shared Postgres rate limits keyed by HMAC digests. Forwarded IP headers are trusted only with `TRUSTED_PROXY=vercel`.
 - **Logs** contain identifiers, counts and error codes only.
 
+## Donations
+
+See `docs/DONATIONS.md`. **Donations are enquiry-only: the website does not take payments**, because no payment provider or approved receiving details exist. `/donate` explains the proposed areas that support could help fund, partnership and institutional support, and an FAQ, and it embeds the enquiry form with the `donation` topic. Donation enquiries are stored in Neon and notified through the outbox exactly like other enquiries (or open an email draft in email-draft mode), and they never claim a payment. "Donate" calls to action are in the desktop and tablet header, the mobile menu, a homepage section and the footer; all link to `/donate`. `docs/DONATIONS.md` lists what is required before online payments can be activated.
+
 ## Outbox processing and recovery
 
 ```bash
@@ -126,12 +130,13 @@ Follow `docs/DEPLOYMENT.md` (step-by-step) and resolve the open decisions in `do
 
 ## Content and branding
 
-Edit `src/content/site.ts` for contacts, mission, programmes, targets and photo credits; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; keep credits beside photographs and on `/credits`. Font licences are in `docs/licenses/`.
+Edit `src/content/site.ts` for contacts, mission, programmes, targets and photo credits, and `src/content/donate.ts` for donation-page and homepage donation copy; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; keep credits beside photographs and on `/credits`. Font licences are in `docs/licenses/`.
 
 The design source reference is **WilsoftTech/Each-herbarium** at commit `d590ed9584d74c6c466234436fd22e804e9f4bc7`, used read-only. See `docs/DESIGN-SOURCE.md`.
 
 ## Known limitations
 
+- Online donations are not available; `/donate` collects enquiries only (see `docs/DONATIONS.md`).
 - Online enquiries are not active until the foundation approves the privacy notice and a retention period, and Neon, Resend and Turnstile are configured. Integration with the real services has not been tested.
 - Email delivery is at least once; duplicates are possible outside Resend's 24-hour idempotency window, and bounces are not tracked.
 - With only the daily Vercel Cron, failed notifications are retried daily; more frequent scheduling needs a suitable plan or an external scheduler.

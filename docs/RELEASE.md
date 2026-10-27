@@ -1,5 +1,11 @@
 # Release notes and launch steps
 
+## 27 October 2026: donations branch `feature/donations-page`
+
+Adds `/donate` (enquiry-only), Donate CTAs in the header, mobile menu, homepage and footer, a `donation` enquiry topic (migration `20261027130000_donation_enquiry_topic`), donation-specific notification and confirmation wording, privacy-notice version `2026-10-27b`, and `docs/DONATIONS.md`. **No payments are taken.** Apply the migration with `npm run db:deploy` before deploying code that offers the topic in online mode.
+
+Decisions for the foundation: review the `/donate` copy and FAQ, especially the statements on tax status and receiving details, and decide whether and how online payments should be pursued (requirements are in `docs/DONATIONS.md`).
+
 ## 27 October 2026: production-readiness branch `production-readiness-neon-outbox`
 
 Adds Neon PostgreSQL persistence for enquiries (Prisma 7, committed migrations), a durable email outbox delivered through Resend, shared abuse limits, explicit site/indexing configuration, dry-run-first retention tooling, an updated privacy notice, a content repository boundary for a future CMS, and unit, integration and browser test suites. Nothing has been deployed, merged or published, and no real email has been sent.

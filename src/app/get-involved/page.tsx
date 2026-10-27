@@ -80,13 +80,11 @@ export default function Involved() {
               please contact the founder.
             </p>
             <p>
-              The website does not collect donations or display unconfirmed
-              banking details. Funding and partnership conversations are handled
-              directly by the foundation.
+              The website does not take payments or display unconfirmed banking
+              details. You can send a donation enquiry and the foundation will
+              reply directly.
             </p>
-            <Button href="/contact?topic=partnership">
-              Discuss ways to support
-            </Button>
+            <Button href="/donate">Ways to donate</Button>
           </div>
         </div>
       </section>

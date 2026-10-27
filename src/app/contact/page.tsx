@@ -65,7 +65,9 @@ export default async function Contact({
                 : undefined
             }
             initialTopic={
-              topic === "volunteer" || topic === "partnership"
+              topic === "volunteer" ||
+              topic === "partnership" ||
+              topic === "donation"
                 ? topic
                 : "general"
             }

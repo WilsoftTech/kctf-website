@@ -46,3 +46,7 @@ To answer an access or deletion request, staff find the enquiry by reference or 
 ## Privacy notice
 
 `/privacy` is rendered at request time from configuration. It describes Neon storage, Resend delivery with Reply-To, Turnstile, access, retention (stating the configured period only when approved), backups and requests. The version is `PRIVACY_NOTICE_VERSION` in `src/content/privacy.ts`; each saved enquiry records it. Bump the version whenever the notice text changes.
+
+## Donation enquiries
+
+Since notice version `2026-10-27b`, the notice states that donation enquiries are handled like other enquiries, that the website never asks for card, bank or mobile-money details, and that Turnstile also runs on `/donate`. Donation enquiries share the enquiry table and the single retention period. No payment or financial records are stored. If online payments are added later, financial-record retention needs its own decision (see `docs/DONATIONS.md`).

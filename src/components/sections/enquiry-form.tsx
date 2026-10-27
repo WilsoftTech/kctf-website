@@ -45,10 +45,15 @@ export function EnquiryForm({
   mode,
   siteKey,
   initialTopic = "general",
+  title = "Start a conversation.",
+  description = "Send the foundation a general, volunteer, partnership or donation enquiry.",
 }: {
   mode: EnquiryFormMode;
   siteKey?: string;
   initialTopic?: string;
+  title?: string;
+  /** Shown when online submission is active. */
+  description?: string;
 }) {
   const online = mode === "online";
   // False in server HTML, true once hydrated. Controls stay disabled until then: without
@@ -248,7 +253,7 @@ export function EnquiryForm({
   if (mode === "unavailable")
     return (
       <div className="enquiry-form" id="enquiry">
-        <h2>Start a conversation.</h2>
+        <h2>{title}</h2>
         <p className="form-notice" role="status">
           Online enquiries are temporarily unavailable. Nothing can be submitted
           here at the moment.
@@ -274,10 +279,10 @@ export function EnquiryForm({
       noValidate
       aria-busy={busy}
     >
-      <h2>Start a conversation.</h2>
+      <h2>{title}</h2>
       <p>
         {online
-          ? "Send the foundation a general, volunteer or partnership enquiry."
+          ? description
           : "Prepare an enquiry in your email app. Website submission has not been activated yet."}
       </p>
       {/* Plain server HTML rather than <noscript>, so it also helps when scripts are
@@ -340,6 +345,7 @@ export function EnquiryForm({
           <option value="general">General enquiry</option>
           <option value="volunteer">Volunteering</option>
           <option value="partnership">Partnerships & support</option>
+          <option value="donation">Donating to the foundation</option>
         </select>
         <label htmlFor="message">Your message</label>
         <textarea
@@ -349,14 +355,21 @@ export function EnquiryForm({
           required
           minLength={20}
           maxLength={3000}
-          placeholder="Tell us how you’d like to connect…"
+          placeholder={
+            topic === "donation"
+              ? "Tell us how you’d like to support the foundation…"
+              : "Tell us how you’d like to connect…"
+          }
           aria-invalid={!!fields.message}
           aria-describedby={
             fields.message ? "message-help message-error" : "message-help"
           }
         />
         <p id="message-help" className="small muted">
-          20–3,000 characters. Please leave out sensitive personal details.
+          20–3,000 characters.{" "}
+          {topic === "donation"
+            ? "Please do not include card, bank or mobile-money details, or sensitive personal information."
+            : "Please leave out sensitive personal details."}
         </p>
         {fields.message && (
           <p className="field-error" id="message-error">

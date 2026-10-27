@@ -8,6 +8,7 @@ const routes = [
   "/projects",
   "/projects/community-lion-conservation",
   "/get-involved",
+  "/donate",
   "/contact",
   "/privacy",
 ];
@@ -89,14 +90,117 @@ test.describe("mobile navigation", () => {
     await expect(page.locator("dialog#mobile-menu")).toBeHidden();
   });
 
-  test("has no horizontal overflow on contact", async ({ page }) => {
-    await page.goto("/contact");
-    const overflow = await page.evaluate(
-      () =>
-        document.documentElement.scrollWidth -
-        document.documentElement.clientWidth,
+  for (const route of ["/contact", "/donate", "/"])
+    test(`has no horizontal overflow on ${route}`, async ({ page }) => {
+      await page.goto(route);
+      const overflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+
+  test("keeps the small-screen header uncluttered", async ({ page }) => {
+    await page.goto("/");
+    await expect(
+      page.getByRole("banner").getByRole("link", { name: "Donate" }),
+    ).toBeHidden();
+    await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
+  });
+
+  test("reaches /donate from the menu and closes it", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const donate = page
+      .locator("dialog#mobile-menu")
+      .getByRole("link", { name: "Donate to KCTF" });
+    const box = await donate.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    await donate.click();
+    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page.locator("dialog#mobile-menu")).toBeHidden();
+  });
+});
+
+test.describe("donation calls to action", () => {
+  test("every donation link on the home page points to /donate", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const ctas = page.locator(".donate-button, .footer-donate");
+    // Header (desktop/tablet), mobile menu, homepage section and footer.
+    expect(await ctas.count()).toBeGreaterThanOrEqual(4);
+    for (const href of await ctas.evaluateAll((els) =>
+      els.map((el) => el.getAttribute("href")),
+    ))
+      expect(href).toBe("/donate");
+  });
+
+  test("the homepage section and footer reach /donate", async ({ page }) => {
+    await page.goto("/");
+    await page
+      .locator(".home-donate")
+      .getByRole("link", { name: "Donate", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Help people and nature thrive.",
     );
-    expect(overflow).toBeLessThanOrEqual(0);
+    await page.goto("/about");
+    await page
+      .getByRole("navigation", { name: "Footer navigation" })
+      .getByRole("link", { name: "Donate" })
+      .click();
+    await expect(page).toHaveURL(/\/donate$/);
+  });
+
+  test("states that online payment is unavailable and asks for no payment details", async ({
+    page,
+  }) => {
+    await page.goto("/donate");
+    await expect(page.locator(".donate-panel")).toContainText(
+      "Online giving is not yet available",
+    );
+    await expect(page.getByLabel("I’d like to talk about")).toHaveValue(
+      "donation",
+    );
+    await expect(
+      page.locator(
+        'input[autocomplete^="cc-"], input[name*="card" i], input[name*="amount" i]',
+      ),
+    ).toHaveCount(0);
+  });
+
+  test("FAQ answers open from the keyboard", async ({ page }) => {
+    await page.goto("/donate");
+    const first = page.locator(".faq details").first();
+    await first.locator("summary").focus();
+    await page.keyboard.press("Enter");
+    await expect(first).toHaveAttribute("open", "");
+    await expect(first.locator("p")).toBeVisible();
+  });
+});
+
+test.describe("desktop donate button", () => {
+  test.skip(({ isMobile }) => isMobile, "desktop only");
+
+  test("is in the header, keyboard reachable and reaches /donate", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+    const donate = page
+      .getByRole("banner")
+      .getByRole("link", { name: "Donate" });
+    await expect(donate).toBeVisible();
+    const box = await donate.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    await donate.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/donate$/);
+    await expect(
+      page.getByRole("banner").getByRole("link", { name: "Donate" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 });
 

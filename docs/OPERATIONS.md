@@ -50,6 +50,7 @@ Built in `src/server/outbox/notification.ts` at send time from the stored enquir
 - `from`: `ENQUIRY_FROM` (a verified Resend sender). The visitor is **never** the sender.
 - `reply_to`: the visitor's validated address.
 - `subject`: topic and reference only, with no visitor-controlled text.
+- Donation enquiries (topic `donation`, from `/donate` or `/contact`) add the line "This is an enquiry about donating. No payment was requested or taken by the website." The visitor's success message also says that no payment has been made or taken. See `docs/DONATIONS.md`.
 - `text` and `html` bodies; every visitor value is HTML-escaped in the HTML part.
 
 ## Outbox worker

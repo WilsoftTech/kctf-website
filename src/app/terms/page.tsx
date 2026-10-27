@@ -33,7 +33,8 @@ export default function Terms() {
           Submitting an enquiry does not confirm a volunteer placement,
           membership, partnership or grant. Any future arrangement requires
           direct discussion and appropriate confirmation. The website does not
-          accept online donations.
+          accept online donations; a donation enquiry is a conversation, not a
+          payment or pledge.
         </p>
         <h2>Information and boundaries</h2>
         <p>

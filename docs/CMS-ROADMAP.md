@@ -12,16 +12,17 @@ A CMS implementation replaces `staticContentRepository` with one that returns **
 
 ## Content types
 
-| Type       | Notes                                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------- |
-| Pages      | Structured sections for About, Get Involved, legal pages; slug, SEO title/description, Open Graph image.  |
-| Programmes | Name, short label, summary, body, activities, photograph, order.                                          |
-| Projects   | Status (proposed/active/completed), targets, stages, budget summary, locations, related programmes.       |
-| Articles   | Dated news/updates replacing the homepage planning placeholder; author, publish date, summary, body.      |
-| Media      | Images with alt text, caption, author, source, licence and licence URL (credits are mandatory, as today). |
-| Partners   | Name, logo, description, link, relationship status, approval evidence.                                    |
-| Team       | Name, role, biography, portrait with consent record, display order.                                       |
-| Settings   | Contact details, address, social links, organisation status disclosures.                                  |
+| Type       | Notes                                                                                                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pages      | Structured sections for About, Get Involved, legal pages; slug, SEO title/description, Open Graph image.                                                                                                           |
+| Programmes | Name, short label, summary, body, activities, photograph, order.                                                                                                                                                   |
+| Projects   | Status (proposed/active/completed), targets, stages, budget summary, locations, related programmes.                                                                                                                |
+| Articles   | Dated news/updates replacing the homepage planning placeholder; author, publish date, summary, body.                                                                                                               |
+| Media      | Images with alt text, caption, author, source, licence and licence URL (credits are mandatory, as today).                                                                                                          |
+| Partners   | Name, logo, description, link, relationship status, approval evidence.                                                                                                                                             |
+| Team       | Name, role, biography, portrait with consent record, display order.                                                                                                                                                |
+| Donations  | `/donate` copy (intro, proposed support areas, panel, partnership, FAQ) and the homepage section; today `src/content/donate.ts` via `content.getDonationPage()`. Changes to payment status need Reviewer approval. |
+| Settings   | Contact details, address, social links, organisation status disclosures.                                                                                                                                           |
 
 ## Roles
 

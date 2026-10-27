@@ -51,6 +51,22 @@ describe("durable enquiry persistence", () => {
     });
   });
 
+  it("saves a donation enquiry with its topic and never reports a payment", async () => {
+    const input = { ...enquiryInput(9), topic: "donation" };
+    const res = await submitEnquiry(request(input), submitDeps());
+    expect(res.status).toBe(201);
+    expect(res.body.state).toBe("received");
+    expect(res.body.message).toContain("donation enquiry");
+    expect(res.body.message).toContain("No payment has been made or taken");
+    expect(res.body.message).not.toMatch(/thank you for your donation|paid/i);
+    const saved = await db.enquiry.findUniqueOrThrow({
+      where: { idempotencyKey: input.idempotencyKey },
+      include: { outbox: true },
+    });
+    expect(saved.topic).toBe("donation");
+    expect(saved.outbox).toHaveLength(1);
+  });
+
   it("rolls back the enquiry when the outbox insert fails", async () => {
     await db.$executeRawUnsafe(`
       CREATE FUNCTION test_fail_outbox() RETURNS trigger AS $$

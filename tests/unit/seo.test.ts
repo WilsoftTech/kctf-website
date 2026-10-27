@@ -28,7 +28,8 @@ describe("canonical origin, robots, sitemap and metadata agree", () => {
     expect(metadata.robots).toEqual({ index: true, follow: true });
     expect(robots.sitemap).toBe("https://kctf.example/sitemap.xml");
     expect(robots.rules).toMatchObject({ allow: "/", disallow: "/api/" });
-    expect(sitemap.length).toBe(11);
+    expect(sitemap.length).toBe(12);
+    expect(sitemap.map((e) => e.url)).toContain("https://kctf.example/donate");
     expect(
       sitemap.every((e) => e.url.startsWith("https://kctf.example/")),
     ).toBe(true);

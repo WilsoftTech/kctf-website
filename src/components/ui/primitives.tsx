@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import { photos, type PhotoKey } from "@/content/site";
 export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return (
@@ -22,6 +22,47 @@ export function Button({
     <Link href={href} className={`button ${outline ? "button-outline" : ""}`}>
       {children}
       <Arrow />
+    </Link>
+  );
+}
+export function Heart() {
+  return (
+    <svg
+      className="heart"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M12 20.3 4.6 13a4.6 4.6 0 0 1 6.5-6.6l.9.9.9-.9a4.6 4.6 0 0 1 6.5 6.6Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+/** Every donation call to action links to /donate. */
+export function DonateButton({
+  className = "",
+  label = "Donate",
+  current = false,
+  onClick,
+}: {
+  className?: string;
+  label?: string;
+  current?: boolean;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
+}) {
+  return (
+    <Link
+      href="/donate"
+      className={`donate-button ${className}`}
+      aria-current={current ? "page" : undefined}
+      onClick={onClick}
+    >
+      <Heart />
+      {label}
     </Link>
   );
 }

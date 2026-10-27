@@ -11,6 +11,7 @@ import {
   targets,
   type PhotoKey,
 } from "@/content/site";
+import { donationPage } from "@/content/donate";
 
 export type SiteSettings = typeof site;
 export type NavigationItem = (typeof navigation)[number];
@@ -18,6 +19,7 @@ export type Programme = (typeof programmes)[number];
 export type Photo = (typeof photos)[PhotoKey];
 export type ProjectTarget = (typeof targets)[number];
 export type ProjectStage = (typeof projectStages)[number];
+export type DonationPage = typeof donationPage;
 
 export type PublicRoute = {
   path: string;
@@ -30,6 +32,7 @@ export interface ContentRepository {
   getNavigation(): Promise<readonly NavigationItem[]>;
   getProgrammes(): Promise<readonly Programme[]>;
   getPhoto(key: PhotoKey): Promise<Photo>;
+  getDonationPage(): Promise<DonationPage>;
   /** Every public, published, indexable route. Drives the sitemap. */
   getPublicRoutes(): Promise<readonly PublicRoute[]>;
 }
@@ -41,6 +44,7 @@ const staticRoutes: readonly PublicRoute[] = [
   "/projects",
   "/projects/community-lion-conservation",
   "/get-involved",
+  "/donate",
   "/contact",
   "/privacy",
   "/terms",
@@ -57,6 +61,7 @@ export const staticContentRepository: ContentRepository = {
   getNavigation: async () => navigation,
   getProgrammes: async () => programmes,
   getPhoto: async (key) => photos[key],
+  getDonationPage: async () => donationPage,
   getPublicRoutes: async () => staticRoutes,
 };
 

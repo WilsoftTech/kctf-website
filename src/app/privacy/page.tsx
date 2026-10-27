@@ -50,12 +50,18 @@ export default function Privacy() {
           include identity documents, health information, sensitive case details
           or information about children.
         </p>
+        <p>
+          Donation enquiries, sent from the donate or contact page, are handled
+          in the same way as other enquiries. The website does not process
+          payments and never asks for card, bank or mobile-money details, so
+          please do not include them.
+        </p>
         <h2>Why information is used</h2>
         <p>
           The foundation uses enquiries to respond to questions and discuss
-          volunteering, partnerships or proposed work. An enquiry does not
-          create a membership, placement, funding commitment or formal
-          partnership.
+          volunteering, partnerships, donations or proposed work. An enquiry
+          does not create a membership, placement, donation, pledge, funding
+          commitment or formal partnership.
         </p>
         <h2>Where it is stored and who processes it</h2>
         <ul>
@@ -125,8 +131,8 @@ export default function Privacy() {
         <p>
           The website uses locally hosted fonts and photographs and does not
           install advertising or analytics trackers. When online enquiries are
-          active, Cloudflare Turnstile runs on the contact page under its own
-          privacy terms.
+          active, Cloudflare Turnstile runs on the contact and donate pages
+          under its own privacy terms.
         </p>
         <h2>External links</h2>
         <p>

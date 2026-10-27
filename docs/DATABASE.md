@@ -12,10 +12,11 @@ Added 27 October 2026. The website stores online enquiries, their email-outbox j
 
 Source of truth: `prisma/schema.prisma`. Migrations: `prisma/migrations/`.
 
-| Migration                             | Change                                                                                                                                    |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `20261027120000_enquiry_persistence`  | Enums, the three tables, unique and lookup indexes, cascading foreign key.                                                                |
-| `20261027120100_utc_session_timezone` | `ALTER DATABASE … SET timezone TO 'UTC'`. Prisma's pg adapter writes and reads timestamps as UTC; non-UTC sessions would skew scheduling. |
+| Migration                               | Change                                                                                                                                    |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261027120000_enquiry_persistence`    | Enums, the three tables, unique and lookup indexes, cascading foreign key.                                                                |
+| `20261027120100_utc_session_timezone`   | `ALTER DATABASE … SET timezone TO 'UTC'`. Prisma's pg adapter writes and reads timestamps as UTC; non-UTC sessions would skew scheduling. |
+| `20261027130000_donation_enquiry_topic` | `ALTER TYPE enquiry_topic ADD VALUE 'donation'`. Additive and safe to deploy before the code; stores no payment data.                     |
 
 There are no CMS tables. See `docs/CMS-ROADMAP.md`.
 

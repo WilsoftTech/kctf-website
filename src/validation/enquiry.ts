@@ -1,5 +1,11 @@
 import { z } from "zod";
-export const enquiryTopics = ["general", "volunteer", "partnership"] as const;
+export const enquiryTopics = [
+  "general",
+  "volunteer",
+  "partnership",
+  "donation",
+] as const;
+export type EnquiryTopic = (typeof enquiryTopics)[number];
 export const enquirySchema = z
   .object({
     name: z
