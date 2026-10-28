@@ -62,7 +62,7 @@ npm run dev            # http://localhost:3000
 
 With the defaults the site runs fully in **email-draft mode**: the contact form validates and opens a prefilled draft in the visitor's email app; nothing is stored. No credentials are needed. On Windows, if PowerShell blocks `npm.ps1`, use `npm.cmd`.
 
-To work on online enquiries locally, create a Neon **development** branch and fill in `DATABASE_URL` (pooled) and `DIRECT_URL` (direct), then `npm run db:migrate:dev`. Use Turnstile's published test keys or the local doubles described in `docs/DEPLOYMENT.md`. Never point local work at production.
+To work on online enquiries locally, run `neon checkout development` (writes `DATABASE_URL` and `DATABASE_URL_UNPOOLED` for the Neon **development** branch into `.env.local`), then `npm run db:seed` for sample data. Schema changes use `npm run db:migrate:dev`. Use Turnstile's published test keys or the local doubles described in `docs/DEPLOYMENT.md`. Never point local work at production.
 
 ## Environment configuration
 
@@ -77,7 +77,8 @@ Every variable is listed, grouped and commented in `.env.example`; `docs/DEPLOYM
 
 See `docs/DATABASE.md`. Summary:
 
-- `DATABASE_URL` = Neon pooled connection for the app; `DIRECT_URL` = direct connection for the Prisma CLI.
+- `DATABASE_URL` = Neon pooled connection for the app; `DIRECT_URL` (or Neon's `DATABASE_URL_UNPOOLED`) = direct connection for the Prisma CLI.
+- Development data: `npm run db:seed` adds four fictitious enquiries; it refuses production.
 - Schema changes: `npm run db:migrate:dev -- --name <change> --create-only` on a development branch, review the SQL, apply, commit.
 - Staging/production: `npm run db:status`, then `npm run db:deploy -- --target <direct host>`. Migrations are never applied by builds or tests, and `migrate dev`/`reset`/`db push` are refused when `SITE_ENVIRONMENT=production`.
 

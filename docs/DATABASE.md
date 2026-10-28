@@ -41,7 +41,11 @@ The client is a lazily created singleton (five connections per instance, five-se
 3. For each branch, copy the **pooled** string into `DATABASE_URL` and the **direct** string into `DIRECT_URL` for that environment only.
 4. Use the database owner role created by Neon for migrations. The migrations need table/enum creation and `ALTER DATABASE` on their own database.
 
-The repository is linked to Neon project `orange-breeze-85323397` with the Neon CLI (`neon init`, 28 October 2026). `neon.ts` declares the project's services (Postgres only) and branch policy: new non-default branches expire after 7 days. `.neon` records the linked organisation, project and branch and is gitignored. `neon env pull` writes `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED` (direct) and `NEON_BRANCH` into `.env.local` for the linked branch. `neon init` linked the `production` branch, so before local development run `neon checkout <dev-branch> --create` to switch `.env.local` to a development branch (step 2).
+The repository is linked to Neon project `orange-breeze-85323397` with the Neon CLI (`neon init`, 28 October 2026). `neon.ts` declares the project's services (Postgres only) and branch policy: new non-default branches expire after 7 days, except the long-lived `development` branch. `.neon` records the linked organisation, project and branch and is gitignored. `neon env pull` writes `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED` (direct) and `NEON_BRANCH` into `.env.local` for the linked branch. Local work uses the `development` branch (`neon checkout development`), created from production on 28 October 2026 after the migrations were applied there. `neon checkout` rewrites only the variables it pulls: remove any old `DIRECT_URL` from `.env.local` so the CLI cannot reach another branch.
+
+### Development seed data
+
+`npm run db:seed` upserts four clearly fictitious enquiries (one per topic, `example.com` addresses) into the linked database. Their outbox jobs are already `sent` (three) or `failed` (one), so the outbox worker never emails them. It is idempotent and refuses `SITE_ENVIRONMENT=production|staging` and the Neon `production` branch. Production holds no seed data.
 
 ## Safe migration workflow
 

@@ -22,6 +22,7 @@
     "db:status": "prisma migrate status",
     "db:migrate:dev": "prisma migrate dev",
     "db:deploy": "tsx scripts/db-deploy.ts",
+    "db:seed": "tsx --conditions=react-server scripts/seed.ts",
     "outbox": "tsx --conditions=react-server scripts/outbox.ts",
     "retention": "tsx --conditions=react-server scripts/retention.ts"
   },
