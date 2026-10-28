@@ -12,6 +12,7 @@ Branch `feature/donation-payments` (from `feature/seo-discoverability`), verifie
 | Unit tests                                | `npm test`                 | 238 passed (7 files; 76 new in `payments.test.ts`)                                                                          |
 | Database integration tests                | `npm run test:integration` | 77 passed (5 files; 38 new in `payments.test.ts`), embedded PostgreSQL 18, all migrations applied plus a schema drift check |
 | Browser tests (desktop 1440×900, Pixel 7) | `npm run test:e2e`         | 107 passed, 31 skipped (viewport-specific), 0 failed; includes axe scans of `/donate/give`                                  |
+| GitHub Actions (`Website checks`)         | push of `e8c9b5c`          | Passed: `npm ci`, typecheck, lint, unit tests, build (run 40752704584)                                                      |
 | Production build (default settings)       | `npm run build`            | Passed; `/donate/give` and `/donate/give/status` dynamic                                                                    |
 
 Coverage of the new work:
@@ -21,7 +22,7 @@ Coverage of the new work:
 - **Browser (production build, mocked providers):** desktop split of about 55/45; stacked mobile layout with 44px+ targets and no horizontal overflow; headline and fallback guidance without JavaScript; reduced motion (no CSS animation, no GSAP transform); keyboard operation of method, currency and amount; inline errors with focus on the first invalid field; no card, PIN or OTP inputs; full card flow (redirect to the intercepted Stripe page, success URL alone shows "Waiting", signed webhook, page updates to confirmed, two outbox jobs); cancel flow; double-click starts one checkout; full Mobile Money flow (phone-approval guidance, IPN, confirmed). Updated CTA tests: every Donate button goes to `/donate/give`, and "Discuss a donation" goes to `/donate#give`. All existing enquiry tests still pass.
 - **Visual review:** desktop and mobile screenshots of `/donate/give` (default, Mobile Money with errors), `/donate` and `/contact`, using synthetic test-mode settings.
 
-Not verified, blocked by missing credentials or out of scope: Stripe test-mode Checkout and `stripe listen` webhook forwarding against a real Stripe account; the Pesapal sandbox (real token, order, IPN registration and status); live payments of any kind; real Resend delivery; GitHub Actions (see the CI result in the release notes); screen readers and physical devices.
+Not verified, blocked by missing credentials or out of scope: Stripe test-mode Checkout and `stripe listen` webhook forwarding against a real Stripe account; the Pesapal sandbox (real token, order, IPN registration and status); live payments of any kind; real Resend delivery; screen readers and physical devices.
 
 ---
 
