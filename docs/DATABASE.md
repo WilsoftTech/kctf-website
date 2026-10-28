@@ -4,19 +4,23 @@ Added 27 October 2026. The website stores online enquiries, their email-outbox j
 
 ## Schema
 
-| Table                | Purpose                                                                                                                                                                                                                       | Personal data                          |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `enquiries`          | One row per saved enquiry: name, email, topic, message, privacy-notice version, `created_at`, a unique client `idempotency_key` and a SHA-256 `request_hash` of the content.                                                  | Yes                                    |
-| `email_outbox`       | One staff-notification job per enquiry (`unique(enquiry_id, kind)`), status `pending → processing → sent \| failed`, attempts, backoff, claim lease, provider message id, sanitised error code. Cascades on enquiry deletion. | No (references the enquiry)            |
-| `rate_limit_buckets` | Fixed-window counters keyed by HMAC digests (`ip:…`, `email:…`, `global`) with an `expires_at`; purged by the worker.                                                                                                         | No raw identifiers; keyed digests only |
+| Table                | Purpose                                                                                                                                                                                                                                                                                                                            | Personal data                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `enquiries`          | One row per saved enquiry: name, email, topic, message, privacy-notice version, `created_at`, a unique client `idempotency_key` and a SHA-256 `request_hash` of the content.                                                                                                                                                       | Yes                                    |
+| `email_outbox`       | Email jobs for exactly one enquiry or one donation (CHECK constraint; `unique(enquiry_id, kind)`, `unique(donation_id, kind)`), status `pending → processing → sent \| failed`, attempts, backoff, claim lease, provider message id, sanitised error code. Cascades on enquiry deletion.                                           | No (references the enquiry)            |
+| `donations`          | One row per online donation attempt: reference, idempotency key, request hash, status-token digest, provider, method, test/live mode, amount in ISO minor units, currency, status, donor name/email, optional message, provider session and payment IDs, checkout URL, short status reason, timestamps. Separate from `enquiries`. | Yes                                    |
+| `payment_events`     | Processed provider events (`unique(provider, event_id)`): type, donation, outcome code. No payloads.                                                                                                                                                                                                                               | No                                     |
+| `rate_limit_buckets` | Fixed-window counters keyed by HMAC digests (`ip:…`, `email:…`, `global`) with an `expires_at`; purged by the worker.                                                                                                                                                                                                              | No raw identifiers; keyed digests only |
 
 Source of truth: `prisma/schema.prisma`. Migrations: `prisma/migrations/`.
 
-| Migration                               | Change                                                                                                                                    |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `20261027120000_enquiry_persistence`    | Enums, the three tables, unique and lookup indexes, cascading foreign key.                                                                |
-| `20261027120100_utc_session_timezone`   | `ALTER DATABASE … SET timezone TO 'UTC'`. Prisma's pg adapter writes and reads timestamps as UTC; non-UTC sessions would skew scheduling. |
-| `20261027130000_donation_enquiry_topic` | `ALTER TYPE enquiry_topic ADD VALUE 'donation'`. Additive and safe to deploy before the code; stores no payment data.                     |
+| Migration                               | Change                                                                                                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261027120000_enquiry_persistence`    | Enums, the three tables, unique and lookup indexes, cascading foreign key.                                                                           |
+| `20261027120100_utc_session_timezone`   | `ALTER DATABASE … SET timezone TO 'UTC'`. Prisma's pg adapter writes and reads timestamps as UTC; non-UTC sessions would skew scheduling.            |
+| `20261027130000_donation_enquiry_topic` | `ALTER TYPE enquiry_topic ADD VALUE 'donation'`. Additive and safe to deploy before the code; stores no payment data.                                |
+| `20261028120000_enquiry_channel`        | `enquiry_channel` enum and `enquiries.channel` (default `online`).                                                                                   |
+| `20261028180000_donation_payments`      | Payment enums, `donations`, `payment_events`, nullable `email_outbox.donation_id` (and nullable `enquiry_id`), indexes, CHECK constraints. Additive. |
 
 There are no CMS tables. See `docs/CMS-ROADMAP.md`.
 

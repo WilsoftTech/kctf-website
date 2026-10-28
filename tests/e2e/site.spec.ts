@@ -9,6 +9,7 @@ const routes = [
   "/projects/community-lion-conservation",
   "/get-involved",
   "/donate",
+  "/donate/give",
   "/contact",
   "/privacy",
 ];
@@ -90,7 +91,7 @@ test.describe("mobile navigation", () => {
     await expect(page.locator("dialog#mobile-menu")).toBeHidden();
   });
 
-  for (const route of ["/contact", "/donate", "/"])
+  for (const route of ["/contact", "/donate", "/donate/give", "/"])
     test(`has no horizontal overflow on ${route}`, async ({ page }) => {
       await page.goto(route);
       const overflow = await page.evaluate(
@@ -109,7 +110,7 @@ test.describe("mobile navigation", () => {
     await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
   });
 
-  test("reaches /donate from the menu and closes it", async ({ page }) => {
+  test("reaches /donate/give from the menu and closes it", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Open menu" }).click();
     const donate = page
@@ -118,13 +119,13 @@ test.describe("mobile navigation", () => {
     const box = await donate.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     await donate.click();
-    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page).toHaveURL(/\/donate\/give$/);
     await expect(page.locator("dialog#mobile-menu")).toBeHidden();
   });
 });
 
 test.describe("donation calls to action", () => {
-  test("every donation link on the home page points to /donate", async ({
+  test("every Donate button on the home page points to /donate/give", async ({
     page,
   }) => {
     await page.goto("/");
@@ -134,34 +135,45 @@ test.describe("donation calls to action", () => {
     for (const href of await ctas.evaluateAll((els) =>
       els.map((el) => el.getAttribute("href")),
     ))
-      expect(href).toBe("/donate");
+      expect(href).toBe("/donate/give");
+    // The secondary action leads to the existing donation-enquiry form.
+    await expect(
+      page
+        .locator(".home-donate")
+        .getByRole("link", { name: "Discuss a donation" }),
+    ).toHaveAttribute("href", "/donate#give");
   });
 
-  test("the homepage section and footer reach /donate", async ({ page }) => {
+  test("the homepage section and footer reach /donate/give", async ({
+    page,
+  }) => {
     await page.goto("/");
     await page
       .locator(".home-donate")
       .getByRole("link", { name: "Donate", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page).toHaveURL(/\/donate\/give$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Help people and nature thrive.",
+      "Give hope. Grow a shared future.",
     );
     await page.goto("/about");
     await page
       .getByRole("navigation", { name: "Footer navigation" })
       .getByRole("link", { name: "Donate" })
       .click();
-    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page).toHaveURL(/\/donate\/give$/);
   });
 
-  test("states that online payment is unavailable and asks for no payment details", async ({
+  test("keeps the donation enquiry separate and free of payment fields", async ({
     page,
   }) => {
     await page.goto("/donate");
     await expect(page.locator(".donate-panel")).toContainText(
-      "Online giving is not yet available",
+      "Discuss a donation",
     );
+    await expect(
+      page.locator(".donate-intro").getByRole("link", { name: "Give online" }),
+    ).toHaveAttribute("href", "/donate/give");
     await expect(page.getByLabel("I’d like to talk about")).toHaveValue(
       "donation",
     );
@@ -185,7 +197,7 @@ test.describe("donation calls to action", () => {
 test.describe("desktop donate button", () => {
   test.skip(({ isMobile }) => isMobile, "desktop only");
 
-  test("is in the header, keyboard reachable and reaches /donate", async ({
+  test("is in the header, keyboard reachable and reaches /donate/give", async ({
     page,
   }) => {
     await page.goto("/about");
@@ -197,7 +209,7 @@ test.describe("desktop donate button", () => {
     expect(box!.height).toBeGreaterThanOrEqual(44);
     await donate.focus();
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page).toHaveURL(/\/donate\/give$/);
     await expect(
       page.getByRole("banner").getByRole("link", { name: "Donate" }),
     ).toHaveAttribute("aria-current", "page");

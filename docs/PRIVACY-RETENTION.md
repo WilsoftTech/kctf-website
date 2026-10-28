@@ -47,6 +47,18 @@ To answer an access or deletion request, staff find the enquiry by reference or 
 
 `/privacy` is rendered at request time from configuration. It describes Neon storage, Resend delivery with Reply-To, Turnstile, access, retention (stating the configured period only when approved), backups and requests. The version is `PRIVACY_NOTICE_VERSION` in `src/content/privacy.ts`; each saved enquiry records it. Bump the version whenever the notice text changes.
 
+## Online donations
+
+Since notice version `2026-10-28c`, `/privacy#donations` describes online giving. It covers the fields stored in `donations` (name, email, amount, currency, method, optional message, reference, notice version, provider status and payment reference, timestamps, idempotency key and a digest of the status-link token), that Stripe and Pesapal collect card or mobile-money details on their own pages, what the site sends them (name, email, amount, reference), the staff and donor emails, and that the acknowledgement is not a tax receipt. `payment_events` keeps provider event IDs, types and outcome codes, never payloads.
+
+| Location                                                   | What                                         | Retention                                                                                                |
+| ---------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Neon (`donations`, `payment_events`, donation outbox jobs) | Donation records and processed events        | **Not yet decided.** Financial records; not touched by `npm run retention`. Decide before live payments. |
+| Stripe / Pesapal                                           | Payment, card or mobile-money data, receipts | The providers' own legal retention.                                                                      |
+| Staff inbox, Resend                                        | Notification and acknowledgement emails      | As for enquiry emails above.                                                                             |
+
+Access or deletion requests for donation records may conflict with accounting obligations. Handle them case by case with the foundation's finance lead.
+
 ## Donation enquiries
 
 Since notice version `2026-10-28b`, email-draft mode can also save a copy of the details the visitor enters (name, email, topic, message, notice version, channel `email_draft`). It is gated exactly like online collection: it stays off until a retention period is configured and `RETENTION_POLICY_APPROVED=true`. These copies are deleted by the same retention command; having no outbox job, they are never held back as undelivered.

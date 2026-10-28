@@ -106,7 +106,7 @@ export function DonationForm({
     siteKey: options.turnstileSiteKey,
     action: "donation",
   });
-  const { token } = turnstile;
+  const { token, reset: resetTurnstile } = turnstile;
 
   // Coming back from the provider with the browser's Back button restores this page from
   // the back/forward cache with the "redirecting" state; make it usable again.
@@ -116,11 +116,11 @@ export function DonationForm({
       inFlight.current = false;
       setPhase("idle");
       setStatus("");
-      turnstile.reset();
+      resetTurnstile();
     };
     window.addEventListener("pageshow", restore);
     return () => window.removeEventListener("pageshow", restore);
-  }, [turnstile]);
+  }, [resetTurnstile]);
 
   function announce(message: string, focus = false) {
     setStatus(message);

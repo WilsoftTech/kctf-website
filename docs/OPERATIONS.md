@@ -98,3 +98,11 @@ Delivery is **at least once with provider-side deduplication. It is not exactly 
 ## Logs
 
 `src/server/log.ts` writes one JSON line per event with an allowlist of fields: identifiers (`enquiryId`, `outboxId`), counts, attempts, HTTP status and short error codes. Form contents, names, email addresses, tokens, secrets, connection strings and IP addresses are never logged. Unknown errors are reduced to a class name or code. Notable events: `enquiry_saved`, `enquiry_replay`, `enquiry_rate_limited`, `enquiry_save_uncertain`, `enquiry_config_invalid`, `outbox_sent`, `outbox_pending`, `outbox_failed`, `outbox_claim_lost`, `outbox_stale_claim_recovered`, `outbox_run`.
+
+## Donation notifications and reconciliation
+
+Online donations (see `docs/DONATIONS.md`) reuse this outbox. On a provider-verified success, the donation and two jobs (`donation-staff-notification`, `donation-acknowledgement`) are written in one transaction. Each job belongs to exactly one enquiry or donation (CHECK constraint). The worker sends a donation job only while the donation is still `succeeded`. Otherwise the job fails with `donation_not_succeeded`. `npm run outbox -- failed` shows `donationId` for donation jobs.
+
+The scheduled `GET /api/outbox/run` first reconciles up to 10 open donations older than 10 minutes with Stripe or Pesapal, then processes the outbox. Its JSON response includes a `payments` summary (`not_configured` while payments are off). Run it by hand with `npm run payments -- reconcile`. Donations in `needs_review` (`npm run payments -- review`) need an operator to compare the provider dashboard with the record. Nothing resolves them automatically.
+
+Payment logs (`donation_*`, `stripe_webhook_*`, `pesapal_ipn_*`) carry donation IDs, statuses and short codes only.

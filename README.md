@@ -95,7 +95,12 @@ See `docs/OPERATIONS.md`. Summary:
 
 ## Donations
 
-See `docs/DONATIONS.md`. **Donations are enquiry-only: the website does not take payments**, because no payment provider or approved receiving details exist. `/donate` explains the proposed areas that support could help fund, partnership and institutional support, and an FAQ, and it embeds the enquiry form with the `donation` topic. Donation enquiries are stored in Neon and notified through the outbox exactly like other enquiries (or open an email draft in email-draft mode), and they never claim a payment. "Donate" calls to action are in the desktop and tablet header, the mobile menu, a homepage section and the footer; all link to `/donate`. `docs/DONATIONS.md` lists what is required before online payments can be activated.
+See `docs/DONATIONS.md`. Two separate flows:
+
+- **Online giving (`/donate/give`):** one-time gifts by card through **Stripe Checkout** or by Mobile Money (MTN MoMo, Airtel Money) through **Pesapal**'s hosted checkout. Both are hosted pages; the site never handles card numbers, PINs or OTPs. **Off by default** (`DONATION_PAYMENTS_ENABLED`), test mode by default, and live mode only in production with `PAYMENTS_LIVE_APPROVED=true`. An unconfigured method is shown as unavailable. A donation counts as paid only after the server re-reads the provider's status and verifies the amount, currency and reference. Uganda is not a Stripe-supported country, so live card payments need an eligible receiving account (see "Provider eligibility" in `docs/DONATIONS.md`).
+- **Donation enquiries (`/donate#give`, "Discuss a donation"):** the existing enquiry form with the `donation` topic, stored and notified like other enquiries. Never a payment.
+
+The Donate buttons (header, mobile menu, homepage, footer) lead to `/donate/give`; "Discuss a donation" leads to `/donate#give`. Operator commands: `npm run payments -- status | reconcile | review | pesapal-ipn`. Local Stripe webhook forwarding: `stripe listen --forward-to localhost:3000/api/payments/stripe/webhook`.
 
 ## Search, structured data and the contact map
 
@@ -117,11 +122,11 @@ npm run outbox -- failed     # failed jobs with error codes (no personal data)
 npm run outbox -- requeue <job-id> | --all-failed
 ```
 
-Jobs run after each submission, from Vercel Cron (`GET /api/outbox/run` with `Authorization: Bearer $CRON_SECRET`; daily in `vercel.json`, more often where the plan allows) and from the CLI. Claiming uses `FOR UPDATE SKIP LOCKED` with a fenced claim token, retries back off exponentially up to 8 attempts, stale claims are recovered after 10 minutes, and exhausted jobs stay visible as `failed` while the enquiry remains saved. Delivery is at least once with Resend idempotency (24-hour window), **not exactly once**.
+Jobs run after each submission or confirmed donation, from Vercel Cron (`GET /api/outbox/run` with `Authorization: Bearer $CRON_SECRET`; daily in `vercel.json`, more often where the plan allows) and from the CLI. Claiming uses `FOR UPDATE SKIP LOCKED` with a fenced claim token, retries back off exponentially up to 8 attempts, stale claims are recovered after 10 minutes, and exhausted jobs stay visible as `failed` while the enquiry remains saved. Each scheduled run first reconciles up to 10 open donations with their provider. Delivery is at least once with Resend idempotency (24-hour window), **not exactly once**.
 
 ## Retention
 
-See `docs/PRIVACY-RETENTION.md`. No retention period has been approved, so none is configured. Online collection stays off until `ENQUIRY_RETENTION_DAYS` and `RETENTION_POLICY_APPROVED=true` are set. `npm run retention` is a dry run by default; `--execute` deletes only with an approved period and holds back enquiries whose notification has not been sent. Nothing deletes automatically.
+See `docs/PRIVACY-RETENTION.md`. No retention period has been approved, so none is configured. Donation records are financial records, are never deleted by the enquiry retention command, and still need their own approved period. Online collection stays off until `ENQUIRY_RETENTION_DAYS` and `RETENTION_POLICY_APPROVED=true` are set. `npm run retention` is a dry run by default; `--execute` deletes only with an approved period and holds back enquiries whose notification has not been sent. Nothing deletes automatically.
 
 ## Verification commands
 
@@ -138,7 +143,7 @@ npm run build               # rebuild with your own settings afterwards
 npx tsx scripts/measure-vitals.ts http://localhost:3000   # optional: lab performance check against `npm start`
 ```
 
-No test contacts Neon, Resend, Cloudflare or Google, and no real email is sent. Results of the latest run are in `docs/VERIFICATION.md`.
+No test contacts Neon, Resend, Cloudflare, Google, Stripe or Pesapal, and no real email or payment is made: payment tests use local provider doubles. Results of the latest run are in `docs/VERIFICATION.md`.
 
 ## Production release
 
@@ -146,13 +151,13 @@ Follow `docs/DEPLOYMENT.md` (step-by-step) and resolve the open decisions in `do
 
 ## Content and branding
 
-Edit `src/content/site.ts` for contacts, mission, programmes, targets and photo credits, and `src/content/donate.ts` for donation-page and homepage donation copy; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; keep credits beside photographs and on `/credits`. Font licences are in `docs/licenses/`.
+Edit `src/content/site.ts` for contacts, mission, programmes, targets and photo credits, and `src/content/donate.ts` for the giving page, donation page and homepage donation copy; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; keep credits beside photographs and on `/credits`. Font licences are in `docs/licenses/`.
 
 The design source reference is **WilsoftTech/Each-herbarium** at commit `d590ed9584d74c6c466234436fd22e804e9f4bc7`, used read-only. See `docs/DESIGN-SOURCE.md`.
 
 ## Known limitations
 
-- Online donations are not available; `/donate` collects enquiries only (see `docs/DONATIONS.md`).
+- Online donations are implemented but off: no Stripe or Pesapal credentials exist, no provider sandbox has been exercised (only local doubles), and live Stripe needs an eligible account outside Uganda (see `docs/DONATIONS.md`). Only one-time gifts are supported.
 - Online enquiries are not active until the foundation approves the privacy notice and a retention period, and Neon, Resend and Turnstile are configured. Integration with the real services has not been tested.
 - Email delivery is at least once; duplicates are possible outside Resend's 24-hour idempotency window, and bounces are not tracked.
 - With only the daily Vercel Cron, failed notifications are retried daily; more frequent scheduling needs a suitable plan or an external scheduler.

@@ -1,5 +1,17 @@
 # Release notes and launch steps
 
+## 28 October 2026: donation-payments branch `feature/donation-payments`
+
+Branched from `feature/seo-discoverability`. Its first commit is the pre-existing, uncommitted "save email-draft enquiry copies" work, committed unchanged. Adds online giving at `/donate/give` (Stripe Checkout for cards, Pesapal hosted checkout for MTN MoMo/Airtel Money) with a server-confirmed status page, webhook and IPN handling, reconciliation, donation emails through the outbox, migration `20261028180000_donation_payments`, privacy notice `2026-10-28c`, shared form components (the contact and donation-enquiry forms were restyled with them), and tests with local provider doubles. **Payments are off by default; nothing has been charged.** Details: `docs/DONATIONS.md`.
+
+Decisions for the foundation:
+
+1. Card payments: identify a legitimately eligible Stripe account holder (Uganda is not Stripe-supported), or leave cards off.
+2. Mobile Money: open and verify a Pesapal merchant account, confirming NGO eligibility, UGX limits, fees and settlement.
+3. Approve the donation privacy wording and a retention period for donation records.
+4. Approve the giving-page copy, suggested amounts and minimum/maximum gifts.
+5. Confirm that acknowledgements must not be described as tax receipts until tax status is verified.
+
 ## 28 October 2026: SEO branch `feature/seo-discoverability`
 
 Branched from `feature/donations-page`. Adds complete per-page metadata (canonical, Open Graph, X/Twitter, image alt text), unique titles and descriptions, `Organization`/`WebSite`/`BreadcrumbList`/`FAQPage` JSON-LD, visible breadcrumbs (including on the lion project hero), a "KCTF at a glance" section on `/about`, a sitemap with honest `lastmod`, an optional AI-training opt-out (`SITE_AI_TRAINING`), optional search-console verification tokens, an experimental `/llms.txt`, `noindex` on `/api/*`, a Vercel-preview indexing guard, a more helpful 404 page, header-logo and AVIF image optimisation, and a click-to-load Google map on `/contact`. The privacy notice gains an "Optional Google map" section, and `PRIVACY_NOTICE_VERSION` is now `2026-10-28`. No database migration. Details are in `docs/SEO.md`.
