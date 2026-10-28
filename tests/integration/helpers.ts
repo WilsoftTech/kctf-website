@@ -44,6 +44,29 @@ export function submitDeps(
   };
 }
 
+/** Email-draft mode with draft saving on. Never calls Turnstile or Resend. */
+export function draftDeps(): SubmitDeps & {
+  fetchImpl: ReturnType<typeof vi.fn>;
+} {
+  const fetchImpl = vi.fn(async () => {
+    throw new Error("draft saving must not call external services");
+  });
+  return {
+    siteOrigin: origin,
+    readConfig: () => ({
+      mode: "email-draft",
+      issues: [],
+      drafts: {
+        abuseHashSecret: onlineConfig.abuseHashSecret,
+        trustedProxy: onlineConfig.trustedProxy,
+        retentionDays: onlineConfig.retentionDays,
+      },
+    }),
+    getDb: () => db,
+    fetchImpl: fetchImpl as unknown as typeof fetch & ReturnType<typeof vi.fn>,
+  };
+}
+
 export function enquiryInput(
   n: number,
   overrides: Record<string, unknown> = {},

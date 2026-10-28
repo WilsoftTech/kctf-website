@@ -4,6 +4,7 @@ import { submitEnquiry } from "@/server/enquiries/submit";
 import { request } from "../support/fixtures";
 import {
   db,
+  draftDeps,
   enquiryInput,
   resetDatabase,
   submitDeps,
@@ -164,6 +165,77 @@ describe("durable enquiry persistence", () => {
     expect(res.status).toBe(503);
     expect(res.body.state).toBe("unavailable");
     expect(await db.enquiry.count()).toBe(0);
+  });
+});
+
+describe("email-draft copies", () => {
+  it("saves a copy with no outbox job and never calls Turnstile or Resend", async () => {
+    const input = enquiryInput(30, { channel: "email-draft", token: "" });
+    const t = draftDeps();
+    const res = await submitEnquiry(request(input), t);
+    expect(res.status).toBe(201);
+    expect(res.body.state).toBe("received");
+    expect(res.body.message).toContain("press Send");
+    expect(res.body.message).not.toMatch(/received and saved|will reply/i);
+    expect(res.queued).toBeFalsy();
+    expect(t.fetchImpl).not.toHaveBeenCalled();
+    const saved = await db.enquiry.findUniqueOrThrow({
+      where: { idempotencyKey: input.idempotencyKey },
+      include: { outbox: true },
+    });
+    expect(saved).toMatchObject({
+      name: input.name,
+      email: input.email,
+      channel: "email_draft",
+      privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+    });
+    expect(saved.outbox).toHaveLength(0);
+  });
+
+  it("replays a repeated draft without a duplicate", async () => {
+    const input = enquiryInput(31, {
+      channel: "email-draft",
+      topic: "donation",
+    });
+    const first = await submitEnquiry(request(input), draftDeps());
+    const again = await submitEnquiry(request(input), draftDeps());
+    expect(first.status).toBe(201);
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ state: "received", replay: true });
+    expect(again.body.message).toContain("No payment has been made or taken");
+    expect(await db.enquiry.count()).toBe(1);
+  });
+
+  it("applies the shared rate limits", async () => {
+    const statuses = [];
+    for (let i = 0; i < 4; i++)
+      statuses.push(
+        (
+          await submitEnquiry(
+            request(
+              enquiryInput(32, {
+                channel: "email-draft",
+                idempotencyKey: crypto.randomUUID(),
+              }),
+            ),
+            draftDeps(),
+          )
+        ).status,
+      );
+    expect(statuses).toEqual([201, 201, 201, 429]);
+    expect(await db.enquiry.count()).toBe(3);
+  });
+
+  it("existing online enquiries keep the online channel", async () => {
+    const input = enquiryInput(33);
+    await submitEnquiry(request(input), submitDeps());
+    expect(
+      (
+        await db.enquiry.findUniqueOrThrow({
+          where: { idempotencyKey: input.idempotencyKey },
+        })
+      ).channel,
+    ).toBe("online");
   });
 });
 

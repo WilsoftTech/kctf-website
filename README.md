@@ -60,7 +60,7 @@ cp .env.example .env.local
 npm run dev            # http://localhost:3000
 ```
 
-With the defaults the site runs fully in **email-draft mode**: the contact form validates and opens a prefilled draft in the visitor's email app; nothing is stored. No credentials are needed. On Windows, if PowerShell blocks `npm.ps1`, use `npm.cmd`.
+With the defaults the site runs fully in **email-draft mode**: the contact form validates and opens a prefilled draft in the visitor's email app; nothing is stored unless draft saving is configured (below). No credentials are needed. On Windows, if PowerShell blocks `npm.ps1`, use `npm.cmd`.
 
 To work on online enquiries locally, run `neon checkout development` (writes `DATABASE_URL` and `DATABASE_URL_UNPOOLED` for the Neon **development** branch into `.env.local`), then `npm run db:seed` for sample data. Schema changes use `npm run db:migrate:dev`. Use Turnstile's published test keys or the local doubles described in `docs/DEPLOYMENT.md`. Never point local work at production.
 
@@ -87,6 +87,7 @@ See `docs/DATABASE.md`. Summary:
 See `docs/OPERATIONS.md`. Summary:
 
 - **Modes:** `email-draft` (switched off), `online` (fully configured), `unavailable` (switched on but misconfigured, shows direct contact details, never silently falls back to drafts).
+- **Saved drafts:** in email-draft mode, "Prepare email enquiry" also saves a copy (`channel = email_draft`, no outbox job, nobody is notified) when `DATABASE_URL`, `ABUSE_HASH_SECRET`, `ENQUIRY_RETENTION_DAYS` and `RETENTION_POLICY_APPROVED=true` are set. The shared rate limits are the only abuse control, since draft mode has no Turnstile. The draft always opens, even if saving fails.
 - **Online:** the enquiry and its outbox job are saved in one transaction; the visitor is told it was **received and saved** with a reference, not that an email was sent. A client idempotency key, enforced by a unique index, makes retries after uncertain results safe.
 - **Notification:** Resend sends from the verified `ENQUIRY_FROM` to `ENQUIRY_TO` with the visitor as Reply-To only, in text and escaped HTML.
 - **Abuse controls:** origin check, 16 KB streamed cap, strict validation, honeypot, Turnstile (hostname and action), shared Postgres rate limits keyed by HMAC digests. Forwarded IP headers are trusted only with `TRUSTED_PROXY=vercel`.

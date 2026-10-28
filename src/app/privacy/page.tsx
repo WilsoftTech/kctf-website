@@ -11,7 +11,9 @@ export const generateMetadata = () =>
     "/privacy",
   );
 export default function Privacy() {
-  const { mode } = enquiryConfig();
+  const enquiries = enquiryConfig();
+  const { mode } = enquiries;
+  const drafts = mode === "email-draft" && !!enquiries.drafts;
   const retention = readRetentionConfig();
   const retentionDays =
     retention.approved && retention.days ? retention.days : undefined;
@@ -35,16 +37,19 @@ export default function Privacy() {
         <p>
           {mode === "online"
             ? "Online enquiries are active. Submitted enquiries are stored and forwarded to the foundation as described below."
-            : mode === "email-draft"
-              ? "Online submission is not active. The form checks your details in your browser and opens a draft in your own email app. You choose whether to send it. Nothing is stored by this website in this mode."
-              : "Online submission is temporarily unavailable. Nothing can be submitted through the form; please email the foundation directly."}
+            : drafts
+              ? "Online submission is not active. The form checks your details in your browser, saves a copy of them on this website and opens a draft in your own email app. You choose whether to send the email; the copy is kept either way, as described below, and no notification is sent from this website."
+              : mode === "email-draft"
+                ? "Online submission is not active. The form checks your details in your browser and opens a draft in your own email app. You choose whether to send it. Nothing is stored by this website in this mode."
+                : "Online submission is temporarily unavailable. Nothing can be submitted through the form; please email the foundation directly."}
         </p>
         <h2>What an online enquiry collects</h2>
         <p>
           Your name, email address, enquiry topic, message, the time of
-          submission and confirmation that you read this notice (with its
-          version). A one-time form key is kept so that a retried submission is
-          not saved twice.
+          submission, whether it was sent online or prepared as an email draft,
+          and confirmation that you read this notice (with its version). A
+          one-time form key is kept so that a retried submission is not saved
+          twice.
         </p>
         <p>
           Please provide only the details needed for your question. Do not
@@ -69,7 +74,8 @@ export default function Privacy() {
           <li>
             <strong>Neon</strong> hosts the website’s PostgreSQL database, where
             each online enquiry is saved together with a record of its email
-            notification.
+            notification. A copy kept when you prepare an email draft has no
+            notification record.
           </li>
           <li>
             <strong>Resend</strong> delivers a notification containing your

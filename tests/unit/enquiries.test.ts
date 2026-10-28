@@ -152,6 +152,33 @@ describe("request boundary (before any database or network access)", () => {
     expect(res.body.state).toBe("unavailable");
     expect(t.getDb).not.toHaveBeenCalled();
   });
+  it("never saves a draft copy when draft saving is off", async () => {
+    const t = deps({
+      readConfig: () => ({ mode: "email-draft", issues: [] }),
+    });
+    const res = await submitEnquiry(
+      request({ ...valid, channel: "email-draft" }),
+      t.deps,
+    );
+    expect(res.status).toBe(503);
+    expect(res.body.state).toBe("unavailable");
+    expect(t.getDb).not.toHaveBeenCalled();
+  });
+  it("never treats a draft copy as an online submission", async () => {
+    const t = deps();
+    const res = await submitEnquiry(
+      request({ ...valid, channel: "email-draft" }),
+      t.deps,
+    );
+    expect(res.status).toBe(503);
+    expect(res.body.state).toBe("unavailable");
+    expect(t.getDb).not.toHaveBeenCalled();
+    expect(t.fetchImpl).not.toHaveBeenCalled();
+  });
+  it("rejects an unknown channel", () =>
+    expect(enquirySchema.safeParse({ ...valid, channel: "sms" }).success).toBe(
+      false,
+    ));
   it("reports broken configuration as unavailable, not as received", async () => {
     const t = deps({
       readConfig: () => ({

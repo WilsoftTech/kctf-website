@@ -25,6 +25,9 @@ export const enquirySchema = z
     }),
     website: z.string().max(0, "Unable to submit this enquiry.").default(""),
     token: z.string().max(2048).default(""),
+    // `email-draft`: the visitor is opening a draft in their own email app and the website
+    // keeps a copy (only when the server allows it; see readDraftConfig).
+    channel: z.enum(["online", "email-draft"]).default("online"),
     // Generated once per enquiry in the browser and reused for retries of that enquiry.
     idempotencyKey: z.uuid("Please reload the page and try again."),
   })

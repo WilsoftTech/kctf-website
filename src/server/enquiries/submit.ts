@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { site } from "@/content/site";
 import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
 import type { EnquiryResponse } from "@/lib/enquiry-response";
-import type { EnquiryConfigResult } from "@/server/config";
+import type { DraftConfig, EnquiryConfigResult } from "@/server/config";
 import type { Database } from "@/server/db";
 import { clientIp, consumeLimits, limitsFor } from "@/server/enquiries/abuse";
 import { verifyTurnstile } from "@/server/enquiries/turnstile";
@@ -76,17 +76,20 @@ export function requestHash(e: Enquiry) {
 function received(
   id: string,
   replay: boolean,
-  topic: Enquiry["topic"],
+  { topic, channel }: Pick<Enquiry, "topic" | "channel">,
 ): SubmitResult {
+  // A donation enquiry is a conversation, never a payment: say so explicitly.
+  const noPayment =
+    topic === "donation" ? " No payment has been made or taken." : "";
   return result(replay ? 200 : 201, {
     state: "received",
     reference: enquiryReference(id),
     replay,
-    // A donation enquiry is a conversation, never a payment: say so explicitly.
+    // A saved draft notifies nobody: only the visitor's own email reaches the foundation.
     message:
-      topic === "donation"
-        ? "Thank you — your donation enquiry has been received and saved. No payment has been made or taken. The foundation will reply by email."
-        : "Thank you — your enquiry has been received and saved. The foundation will reply by email.",
+      channel === "email-draft"
+        ? `A copy of your ${topic === "donation" ? "donation " : ""}enquiry has been saved.${noPayment} Your email app will open with a draft: press Send there so the foundation receives it.`
+        : `Thank you — your ${topic === "donation" ? "donation " : ""}enquiry has been received and saved.${noPayment} The foundation will reply by email.`,
   });
 }
 
@@ -105,8 +108,66 @@ async function findExisting(db: Database, data: Enquiry) {
   });
   if (!existing) return undefined;
   return existing.requestHash === requestHash(data)
-    ? received(existing.id, true, data.topic)
+    ? received(existing.id, true, data)
     : conflict();
+}
+
+/** Keeps a copy of an email-draft enquiry. No Turnstile and no outbox job. */
+async function saveDraft(
+  request: Request,
+  data: Enquiry,
+  config: DraftConfig,
+  deps: SubmitDeps,
+): Promise<SubmitResult> {
+  let db: Database | undefined;
+  try {
+    db = deps.getDb();
+    const replay = await findExisting(db, data);
+    if (replay) return replay;
+    const ip = clientIp(request.headers, config.trustedProxy);
+    const allowed = await consumeLimits(
+      db,
+      limitsFor({ ip, email: data.email }, config.abuseHashSecret),
+    );
+    if (!allowed) {
+      log("warn", "enquiry_rate_limited", { channel: data.channel });
+      return result(429, {
+        state: "rate_limited",
+        message:
+          "We have received several enquiries recently, so no copy was saved.",
+      });
+    }
+    const saved = await db.enquiry.create({
+      data: {
+        idempotencyKey: data.idempotencyKey,
+        requestHash: requestHash(data),
+        name: data.name,
+        email: data.email,
+        topic: data.topic,
+        channel: "email_draft",
+        message: data.message,
+        privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+      },
+      select: { id: true },
+    });
+    log("info", "enquiry_draft_saved", { enquiryId: saved.id });
+    return received(saved.id, false, data);
+  } catch (error) {
+    // A concurrent request with the same key committed first.
+    if (db && (error as { code?: string })?.code === "P2002") {
+      try {
+        const replay = await findExisting(db, data);
+        if (replay) return replay;
+      } catch {
+        // Fall through to the uncertain response.
+      }
+    }
+    log("error", "enquiry_draft_save_failed", { code: safeErrorCode(error) });
+    return result(503, {
+      state: "unconfirmed",
+      message: "We could not confirm that a copy was saved.",
+    });
+  }
 }
 
 export async function submitEnquiry(
@@ -158,6 +219,14 @@ export async function submitEnquiry(
   const data = parsed.data;
 
   const configResult = deps.readConfig();
+  if (data.channel === "email-draft") {
+    if (configResult.mode === "email-draft" && configResult.drafts)
+      return saveDraft(request, data, configResult.drafts, deps);
+    return result(503, {
+      state: "unavailable",
+      message: `The enquiry form has changed since this page loaded, so nothing was saved. Please reload the page. ${emailUs}`,
+    });
+  }
   if (configResult.mode !== "online")
     return result(503, {
       state: "unavailable",
@@ -233,7 +302,7 @@ export async function submitEnquiry(
       return saved;
     });
     log("info", "enquiry_saved", { enquiryId: enquiry.id });
-    return { ...received(enquiry.id, false, data.topic), queued: true };
+    return { ...received(enquiry.id, false, data), queued: true };
   } catch (error) {
     // A concurrent request with the same key committed first.
     if ((error as { code?: string })?.code === "P2002") {

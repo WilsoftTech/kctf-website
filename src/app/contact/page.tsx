@@ -72,6 +72,9 @@ export default async function Contact({
                 ? enquiries.config.turnstileSiteKey
                 : undefined
             }
+            recordDrafts={
+              enquiries.mode === "email-draft" && !!enquiries.drafts
+            }
             initialTopic={
               topic === "volunteer" ||
               topic === "partnership" ||

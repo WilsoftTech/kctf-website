@@ -103,6 +103,9 @@ export default async function Donate() {
                 ? enquiries.config.turnstileSiteKey
                 : undefined
             }
+            recordDrafts={
+              enquiries.mode === "email-draft" && !!enquiries.drafts
+            }
             initialTopic="donation"
             title="Send a donation enquiry."
             description="Tell the foundation how you would like to help. This sends an enquiry, not a payment."

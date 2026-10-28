@@ -44,12 +44,15 @@ const noSubscription = () => () => {};
 export function EnquiryForm({
   mode,
   siteKey,
+  recordDrafts = false,
   initialTopic = "general",
   title = "Start a conversation.",
   description = "Send the foundation a general, volunteer, partnership or donation enquiry.",
 }: {
   mode: EnquiryFormMode;
   siteKey?: string;
+  /** Email-draft mode only: the website also keeps a copy of each prepared enquiry. */
+  recordDrafts?: boolean;
   initialTopic?: string;
   title?: string;
   /** Shown when online submission is active. */
@@ -193,6 +196,43 @@ export function EnquiryForm({
     }
   }
 
+  // Email-draft mode with saving on: keep a copy, then always open the draft. The draft is
+  // the visitor's way to reach the foundation, so a failed save never blocks it.
+  async function saveDraftCopy(payload: Enquiry) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setPhase("submitting");
+    announce("Saving a copy and preparing your email draft…");
+    let result: EnquiryResponse | undefined;
+    try {
+      const response = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, channel: "email-draft" }),
+      });
+      result = (await response.json()) as EnquiryResponse;
+    } catch {
+      result = undefined;
+    } finally {
+      inFlight.current = false;
+    }
+    if (result?.state === "received") {
+      // The key is kept until the form is edited, so preparing the same draft again
+      // replays this copy instead of saving a duplicate.
+      setPhase("received");
+      setReference(result.reference);
+      announce(result.message, true);
+    } else {
+      if (result?.state === "conflict") idempotencyKey.current = null;
+      setPhase("idle");
+      announce(
+        `${result?.state === "rate_limited" ? "No copy was saved because several enquiries were prepared recently." : "A copy could not be saved on this website."} Your email app will open with a draft: press Send there so the foundation receives it.`,
+        true,
+      );
+    }
+    window.location.href = mailtoFor(payload);
+  }
+
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (inFlight.current) return;
@@ -218,6 +258,10 @@ export function EnquiryForm({
       return;
     }
     setFields({});
+    if (mode === "email-draft" && recordDrafts) {
+      void saveDraftCopy(parsed.data);
+      return;
+    }
     if (mode === "email-draft") {
       window.location.href = mailtoFor(parsed.data);
       announce(
@@ -283,7 +327,9 @@ export function EnquiryForm({
       <p>
         {online
           ? description
-          : "Prepare an enquiry in your email app. Website submission has not been activated yet."}
+          : recordDrafts
+            ? "Prepare an enquiry in your email app. This website keeps a copy of what you enter; the foundation receives your enquiry when you send the email."
+            : "Prepare an enquiry in your email app. Website submission has not been activated yet."}
       </p>
       {/* Plain server HTML rather than <noscript>, so it also helps when scripts are
           blocked or fail to load. Removed once the form is interactive. */}

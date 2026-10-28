@@ -30,7 +30,7 @@ There are no CMS tables. See `docs/CMS-ROADMAP.md`.
 
 Prisma 7 has no `directUrl` in the schema; the CLI uses `datasource.url` from `prisma.config.ts`, which is set to `DIRECT_URL`, or to `DATABASE_URL_UNPOOLED` (the name `neon env pull` uses) when `DIRECT_URL` is empty. The application connects with `DATABASE_URL` through `@prisma/adapter-pg` (node-postgres over TCP), which works with Neon's pooled endpoint from Node.js hosts. `src/server/db.ts` creates the `pg` pool itself and registers it with `attachDatabasePool` from `@vercel/functions`, as Neon recommends for node-postgres on Vercel Fluid compute; the call does nothing on other hosts. Switching to `@prisma/adapter-neon` later is a one-file change in `src/server/db.ts`.
 
-The client is a lazily created singleton (five connections per instance, five-second connection timeout). Builds and email-draft mode never connect.
+The client is a lazily created singleton (five connections per instance, five-second connection timeout). Builds never connect; email-draft mode connects only when draft saving is configured (`readDraftConfig` in `src/server/config.ts`). `enquiries.channel` records whether an enquiry was submitted online or saved when the visitor prepared an email draft; draft copies have no outbox job.
 
 `prisma.config.ts` loads `.env`/`.env.local` with `@next/env`, so the CLI and the app read the same files. It also refuses `migrate dev`, `migrate reset` and `db push` while `SITE_ENVIRONMENT=production`, and refuses a `SHADOW_DATABASE_URL` that matches `DIRECT_URL` or `DATABASE_URL`.
 

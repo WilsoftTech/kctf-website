@@ -19,6 +19,16 @@ enum EnquiryTopic {
   @@map("enquiry_topic")
 }
 
+/// How the enquiry reached the website. `email_draft`: the form only opened a draft in the
+/// visitor's email app (online submission switched off); the website kept a copy, but no
+/// staff notification is queued and the visitor may never have sent the email.
+enum EnquiryChannel {
+  online
+  email_draft
+
+  @@map("enquiry_channel")
+}
+
 enum OutboxStatus {
   pending
   processing
@@ -30,18 +40,19 @@ enum OutboxStatus {
 
 /// A visitor enquiry. Saved together with its outbox job in one transaction.
 model Enquiry {
-  id                   String        @id @default(uuid(7)) @db.Uuid
+  id                   String         @id @default(uuid(7)) @db.Uuid
   /// Client-generated key; uniqueness makes uncertain retries safe.
-  idempotencyKey       String        @unique @map("idempotency_key") @db.Uuid
+  idempotencyKey       String         @unique @map("idempotency_key") @db.Uuid
   /// SHA-256 of the normalised submission, used to detect key reuse with different content.
-  requestHash          String        @map("request_hash") @db.Char(64)
-  name                 String        @db.VarChar(100)
-  email                String        @db.VarChar(254)
+  requestHash          String         @map("request_hash") @db.Char(64)
+  name                 String         @db.VarChar(100)
+  email                String         @db.VarChar(254)
   topic                EnquiryTopic
-  message              String        @db.VarChar(3000)
+  channel              EnquiryChannel @default(online)
+  message              String         @db.VarChar(3000)
   /// Version of the privacy notice the visitor acknowledged.
-  privacyNoticeVersion String        @map("privacy_notice_version") @db.VarChar(32)
-  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  privacyNoticeVersion String         @map("privacy_notice_version") @db.VarChar(32)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   outbox               EmailOutbox[]
 
   @@index([createdAt])

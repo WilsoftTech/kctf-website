@@ -1,5 +1,6 @@
 // Development seed data. Inserts clearly fictitious enquiries (example.com addresses) with
-// outbox jobs that are already `sent` or `failed`, so the outbox worker never emails them.
+// outbox jobs that are already `sent` or `failed`, plus one email-draft copy (no outbox
+// job), so the outbox worker never emails them.
 // Idempotent: fixed idempotency keys, upserted on every run. Refused for production,
 // staging and the Neon `production` branch.
 //   npm run db:seed
@@ -28,7 +29,8 @@ type Seed = {
   topic: "general" | "volunteer" | "partnership" | "donation";
   message: string;
   daysAgo: number;
-  outbox: "sent" | "failed";
+  /** null: an email-draft copy, which never has an outbox job. */
+  outbox: "sent" | "failed" | null;
 };
 const seeds: Seed[] = [
   {
@@ -71,6 +73,16 @@ const seeds: Seed[] = [
     daysAgo: 1,
     outbox: "failed",
   },
+  {
+    idempotencyKey: "00000000-0000-4000-8000-000000000005",
+    name: "Sample Email Draft (seed)",
+    email: "seed-draft@example.com",
+    topic: "general",
+    message:
+      "Sample enquiry for development, saved when the visitor prepared an email draft.",
+    daysAgo: 0,
+    outbox: null,
+  },
 ];
 
 const target = new URL(readDatabaseUrl());
@@ -83,10 +95,12 @@ try {
   const db = getDb();
   for (const seed of seeds) {
     const createdAt = new Date(Date.now() - seed.daysAgo * day);
+    const channel = seed.outbox ? "online" : "email-draft";
     const fields = {
       // Same hash the app stores; the form-only fields are not part of it.
       requestHash: requestHash({
         ...seed,
+        channel,
         consent: true,
         website: "",
         token: "",
@@ -94,6 +108,7 @@ try {
       name: seed.name,
       email: seed.email,
       topic: seed.topic,
+      channel: seed.outbox ? ("online" as const) : ("email_draft" as const),
       message: seed.message,
       privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
     };
@@ -102,6 +117,10 @@ try {
       create: { idempotencyKey: seed.idempotencyKey, createdAt, ...fields },
       update: fields,
     });
+    if (!seed.outbox) {
+      console.log(`  ${seed.topic.padEnd(11)} ${enquiry.id}  email draft`);
+      continue;
+    }
     const job =
       seed.outbox === "sent"
         ? {

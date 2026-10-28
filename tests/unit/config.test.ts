@@ -3,6 +3,7 @@ import { parsePublicOrigin, readSiteConfig } from "@/lib/site-config";
 import {
   readDatabaseUrl,
   readDeliveryConfig,
+  readDraftConfig,
   readEnquiryConfig,
   readRetentionConfig,
   readWorkerSecret,
@@ -189,6 +190,43 @@ describe("enquiry configuration", () => {
     const text = readEnquiryConfig(secretEnv).issues.join(" ");
     expect(text).not.toContain("bad-secret-value-123");
     expect(text).not.toContain("hunter2");
+  });
+});
+
+describe("saving email-draft enquiries", () => {
+  const draftEnv = { ...onlineEnv, ENQUIRIES_ENABLED: "false" };
+  it("is on when the database, abuse secret and approved retention are set", () =>
+    expect(readEnquiryConfig(draftEnv)).toEqual({
+      mode: "email-draft",
+      issues: [],
+      drafts: {
+        abuseHashSecret: onlineEnv.ABUSE_HASH_SECRET,
+        trustedProxy: "vercel",
+        retentionDays: 30,
+      },
+    }));
+  it("does not need email delivery or Turnstile settings", () =>
+    expect(
+      readDraftConfig({
+        ...draftEnv,
+        RESEND_API_KEY: "",
+        TURNSTILE_SECRET_KEY: "",
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
+      }).config,
+    ).toBeDefined());
+  it.each([
+    ["DATABASE_URL", ""],
+    ["ABUSE_HASH_SECRET", "too-short"],
+    ["TRUSTED_PROXY", "cloudflare"],
+    ["ENQUIRY_RETENTION_DAYS", ""],
+    ["RETENTION_POLICY_APPROVED", "false"],
+  ])("stays off (nothing stored) when %s is %j", (key, value) => {
+    const result = readEnquiryConfig({ ...draftEnv, [key]: value });
+    expect(result.mode).toBe("email-draft");
+    expect(result.mode === "email-draft" && result.drafts).toBeUndefined();
+    expect(readDraftConfig({ ...draftEnv, [key]: value }).issues).not.toEqual(
+      [],
+    );
   });
 });
 

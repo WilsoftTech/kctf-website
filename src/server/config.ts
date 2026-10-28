@@ -41,7 +41,16 @@ export type EnquiryConfig = DeliveryConfig & {
 export type EnquiryMode = "online" | "email-draft" | "unavailable";
 export type EnquiryConfigResult =
   | { mode: "online"; config: EnquiryConfig; issues: [] }
-  | { mode: "email-draft" | "unavailable"; issues: string[] };
+  /** `drafts` is set when email-draft enquiries are also saved (see readDraftConfig). */
+  | { mode: "email-draft"; issues: string[]; drafts?: DraftConfig }
+  | { mode: "unavailable"; issues: string[] };
+
+/** Saving copies of email-draft enquiries: same privacy and abuse gates as online. */
+export type DraftConfig = {
+  abuseHashSecret: string;
+  trustedProxy: TrustedProxy;
+  retentionDays: number;
+};
 
 const TURNSTILE_VERIFY_URL =
   "https://challenges.cloudflare.com/turnstile/v0/siteverify";
@@ -175,10 +184,45 @@ export function readDeliveryConfig(env: Env = process.env): {
   };
 }
 
+/**
+ * Email-draft enquiries are saved only when the database, the abuse-limit secret and an
+ * approved retention period are all configured. Otherwise the form just opens the draft
+ * and nothing is stored, as before. Draft mode has no Turnstile, so the rate limits are
+ * the abuse control.
+ */
+export function readDraftConfig(env: Env = process.env): {
+  config?: DraftConfig;
+  issues: string[];
+} {
+  const issues: string[] = [];
+  try {
+    readDatabaseUrl(env);
+  } catch (error) {
+    issues.push((error as Error).message);
+  }
+  const abuseHashSecret = env.ABUSE_HASH_SECRET ?? "";
+  if (abuseHashSecret.length < 32)
+    issues.push("ABUSE_HASH_SECRET must be at least 32 characters.");
+  const trustedProxy = (env.TRUSTED_PROXY || "none") as TrustedProxy;
+  if (!["vercel", "none"].includes(trustedProxy))
+    issues.push("TRUSTED_PROXY must be `vercel` or `none`.");
+  const retention = readRetentionConfig(env);
+  issues.push(...retention.issues);
+  if (issues.length) return { issues };
+  return {
+    issues,
+    config: { abuseHashSecret, trustedProxy, retentionDays: retention.days! },
+  };
+}
+
 export function readEnquiryConfig(env: Env = process.env): EnquiryConfigResult {
   const switchValue = env.ENQUIRIES_ENABLED ?? "";
   if (switchValue === "" || switchValue === "false")
-    return { mode: "email-draft", issues: [] };
+    return {
+      mode: "email-draft",
+      issues: [],
+      drafts: readDraftConfig(env).config,
+    };
   if (switchValue !== "true")
     return {
       mode: "unavailable",
