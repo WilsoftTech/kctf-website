@@ -24,7 +24,8 @@
     "db:deploy": "tsx scripts/db-deploy.ts",
     "db:seed": "tsx --conditions=react-server scripts/seed.ts",
     "outbox": "tsx --conditions=react-server scripts/outbox.ts",
-    "retention": "tsx --conditions=react-server scripts/retention.ts"
+    "retention": "tsx --conditions=react-server scripts/retention.ts",
+    "payments": "tsx --conditions=react-server scripts/payments.ts"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.0",

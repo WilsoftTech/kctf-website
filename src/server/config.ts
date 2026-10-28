@@ -52,7 +52,7 @@ export type DraftConfig = {
   retentionDays: number;
 };
 
-const TURNSTILE_VERIFY_URL =
+export const TURNSTILE_VERIFY_URL =
   "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -74,7 +74,7 @@ function isLoopbackUrl(value: string) {
   }
 }
 
-function environmentOf(env: Env): SiteEnvironment | undefined {
+export function environmentOf(env: Env): SiteEnvironment | undefined {
   try {
     return readSiteConfig(env).environment;
   } catch {
@@ -82,10 +82,14 @@ function environmentOf(env: Env): SiteEnvironment | undefined {
   }
 }
 
-/** Local test doubles (Turnstile/Resend) are accepted only in development and test. */
-function testOverride(
+/** Local test doubles (Turnstile, Resend, payment APIs) are accepted only in development and test. */
+export function testOverride(
   env: Env,
-  key: "TURNSTILE_VERIFY_URL" | "RESEND_API_URL",
+  key:
+    | "TURNSTILE_VERIFY_URL"
+    | "RESEND_API_URL"
+    | "STRIPE_API_URL"
+    | "PESAPAL_API_URL",
   issues: string[],
 ): string | undefined {
   const value = env[key];

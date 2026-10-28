@@ -42,7 +42,10 @@ export function Heart() {
     </svg>
   );
 }
-/** Every donation call to action links to /donate. */
+/**
+ * Prominent donation calls to action link to the online giving page. It explains when
+ * online giving is unavailable and always offers "Discuss a donation" (/donate#give).
+ */
 export function DonateButton({
   className = "",
   label = "Donate",
@@ -56,7 +59,7 @@ export function DonateButton({
 }) {
   return (
     <Link
-      href="/donate"
+      href="/donate/give"
       className={`donate-button ${className}`}
       aria-current={current ? "page" : undefined}
       onClick={onClick}

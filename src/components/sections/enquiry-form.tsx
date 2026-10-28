@@ -1,36 +1,28 @@
 "use client";
 import Link from "next/link";
-import Script from "next/script";
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type FormEvent,
-} from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { enquirySchema, type Enquiry } from "@/validation/enquiry";
 import type { EnquiryResponse } from "@/lib/enquiry-response";
 import { site } from "@/content/site";
 import { Arrow } from "@/components/ui/primitives";
-type Turnstile = {
-  render: (element: HTMLElement, options: Record<string, unknown>) => string;
-  reset: (id: string) => void;
-  remove: (id: string) => void;
-};
-declare global {
-  interface Window {
-    turnstile?: Turnstile;
-  }
-}
+import {
+  describedBy,
+  Field,
+  FieldError,
+  focusFirstInvalid,
+  FormStatus,
+  Spinner,
+  type FieldErrors,
+} from "@/components/forms/fields";
+import { TurnstileField, useTurnstile } from "@/components/forms/turnstile";
 export type EnquiryFormMode = "online" | "email-draft" | "unavailable";
-type Fields = Record<string, string[] | undefined>;
+type Fields = FieldErrors;
 /**
  * received    — saved by the server (not a claim of email delivery)
  * unconfirmed — the result is unknown; retrying with the same key is safe
  * failed      — definitely not saved; offer a correction, a later retry or direct email
  */
 type Phase = "idle" | "submitting" | "received" | "unconfirmed" | "failed";
-type Verification = "loading" | "ready" | "verified" | "expired" | "error";
 
 function mailtoFor(d: Pick<Enquiry, "topic" | "name" | "email" | "message">) {
   const subject = encodeURIComponent(`KCTF ${d.topic} enquiry`);
@@ -40,6 +32,7 @@ function mailtoFor(d: Pick<Enquiry, "topic" | "name" | "email" | "message">) {
   return `mailto:${site.email}?subject=${subject}&body=${body}`;
 }
 const noSubscription = () => () => {};
+const MESSAGE_MAX = 3000;
 
 export function EnquiryForm({
   mode,
@@ -72,12 +65,14 @@ export function EnquiryForm({
   const [status, setStatus] = useState("");
   const [reference, setReference] = useState("");
   const [fallback, setFallback] = useState("");
-  const [token, setToken] = useState("");
-  const [verification, setVerification] = useState<Verification>("loading");
-  const [scriptReady, setScriptReady] = useState(false);
   const [topic, setTopic] = useState(initialTopic);
-  const widget = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | undefined>(undefined);
+  const [messageLength, setMessageLength] = useState(0);
+  const turnstile = useTurnstile({
+    enabled: online,
+    siteKey,
+    action: "enquiry",
+  });
+  const { token, verification } = turnstile;
   const statusRef = useRef<HTMLParagraphElement>(null);
   // One key per enquiry: kept for retries of an unconfirmed result, replaced after a
   // confirmed save, a definite rejection followed by edits, or a key conflict.
@@ -85,44 +80,8 @@ export function EnquiryForm({
   const [retryPayload, setRetryPayload] = useState<Enquiry | null>(null);
   const inFlight = useRef(false);
 
-  useEffect(() => {
-    if (!online || !scriptReady || !widget.current || !window.turnstile) return;
-    widgetId.current = window.turnstile.render(widget.current, {
-      sitekey: siteKey,
-      action: "enquiry",
-      "refresh-expired": "auto",
-      callback: (t: string) => {
-        setToken(t);
-        setVerification("verified");
-      },
-      "expired-callback": () => {
-        setToken("");
-        setVerification("expired");
-      },
-      "timeout-callback": () => {
-        setToken("");
-        setVerification("expired");
-        if (widgetId.current) window.turnstile?.reset(widgetId.current);
-      },
-      "error-callback": () => {
-        setToken("");
-        setVerification("error");
-        return true;
-      },
-    });
-    setVerification("ready");
-    return () => {
-      if (widgetId.current) window.turnstile?.remove(widgetId.current);
-      widgetId.current = undefined;
-    };
-  }, [online, scriptReady, siteKey]);
-
   function resetVerification() {
-    setToken("");
-    if (widgetId.current) {
-      setVerification("ready");
-      window.turnstile?.reset(widgetId.current);
-    }
+    turnstile.reset();
   }
 
   function announce(message: string, focus = false) {
@@ -167,6 +126,7 @@ export function EnquiryForm({
         setRetryPayload(null);
         form?.reset();
         setTopic(initialTopic);
+        setMessageLength(0);
         announce(result.message, true);
         return;
       case "unconfirmed":
@@ -182,9 +142,7 @@ export function EnquiryForm({
         setPhase("failed");
         if (result.fields) {
           setFields(result.fields);
-          requestAnimationFrame(() =>
-            form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
-          );
+          focusFirstInvalid(form);
         }
         announce(result.message, !result.fields);
         return;
@@ -252,9 +210,7 @@ export function EnquiryForm({
       setFields(parsed.error.flatten().fieldErrors);
       setPhase("idle");
       announce("Please check the highlighted fields.");
-      requestAnimationFrame(() =>
-        form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
-      );
+      focusFirstInvalid(form);
       return;
     }
     setFields({});
@@ -296,7 +252,7 @@ export function EnquiryForm({
 
   if (mode === "unavailable")
     return (
-      <div className="enquiry-form" id="enquiry">
+      <div className="enquiry-form form-card" id="enquiry">
         <h2>{title}</h2>
         <p className="form-notice" role="status">
           Online enquiries are temporarily unavailable. Nothing can be submitted
@@ -314,23 +270,29 @@ export function EnquiryForm({
 
   const busy = phase === "submitting";
   const canSend = hydrated && !busy && (!online || !!token);
+  const donation = topic === "donation";
   return (
     <form
-      className="enquiry-form"
+      className="enquiry-form form-card"
       id="enquiry"
       onSubmit={submit}
       onChange={edited}
       noValidate
       aria-busy={busy}
     >
-      <h2>{title}</h2>
-      <p>
-        {online
-          ? description
-          : recordDrafts
-            ? "Prepare an enquiry in your email app. This website keeps a copy of what you enter; the foundation receives your enquiry when you send the email."
-            : "Prepare an enquiry in your email app. Website submission has not been activated yet."}
-      </p>
+      <div className="form-card-head">
+        <h2>{title}</h2>
+        <p>
+          {online
+            ? description
+            : recordDrafts
+              ? "Prepare an enquiry in your email app. This website keeps a copy of what you enter; the foundation receives your enquiry when you send the email."
+              : "Prepare an enquiry in your email app. Website submission has not been activated yet."}
+        </p>
+        <p className="form-required-note">
+          All fields are required unless marked optional.
+        </p>
+      </div>
       {/* Plain server HTML rather than <noscript>, so it also helps when scripts are
           blocked or fail to load. Removed once the form is interactive. */}
       {!hydrated && (
@@ -344,8 +306,7 @@ export function EnquiryForm({
       <fieldset className="enquiry-fields" disabled={!hydrated || busy}>
         <legend className="visually-hidden">Your enquiry</legend>
         <div className="form-row">
-          <div>
-            <label htmlFor="name">Your name</label>
+          <Field id="name" label="Your name" error={fields.name?.[0]}>
             <input
               id="name"
               name="name"
@@ -354,131 +315,102 @@ export function EnquiryForm({
               minLength={2}
               maxLength={100}
               aria-invalid={!!fields.name}
-              aria-describedby={fields.name ? "name-error" : undefined}
+              aria-describedby={describedBy("name", { error: !!fields.name })}
             />
-            {fields.name && (
-              <p className="field-error" id="name-error">
-                {fields.name[0]}
-              </p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="email">Email address</label>
+          </Field>
+          <Field id="email" label="Email address" error={fields.email?.[0]}>
             <input
               id="email"
               name="email"
               type="email"
+              inputMode="email"
               autoComplete="email"
               required
               maxLength={254}
               aria-invalid={!!fields.email}
-              aria-describedby={fields.email ? "email-error" : undefined}
+              aria-describedby={describedBy("email", {
+                error: !!fields.email,
+              })}
             />
-            {fields.email && (
-              <p id="email-error" className="field-error">
-                {fields.email[0]}
-              </p>
-            )}
-          </div>
+          </Field>
         </div>
-        <label htmlFor="topic">I’d like to talk about</label>
-        <select
-          name="topic"
-          id="topic"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-        >
-          <option value="general">General enquiry</option>
-          <option value="volunteer">Volunteering</option>
-          <option value="partnership">Partnerships & support</option>
-          <option value="donation">Donating to the foundation</option>
-        </select>
-        <label htmlFor="message">Your message</label>
-        <textarea
-          name="message"
+        <Field id="topic" label="I’d like to talk about">
+          <div className="select-wrap">
+            <select
+              name="topic"
+              id="topic"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+            >
+              <option value="general">General enquiry</option>
+              <option value="volunteer">Volunteering</option>
+              <option value="partnership">Partnerships & support</option>
+              <option value="donation">Donating to the foundation</option>
+            </select>
+          </div>
+        </Field>
+        <Field
           id="message"
-          rows={5}
-          required
-          minLength={20}
-          maxLength={3000}
-          placeholder={
-            topic === "donation"
-              ? "Tell us how you’d like to support the foundation…"
-              : "Tell us how you’d like to connect…"
+          label="Your message"
+          error={fields.message?.[0]}
+          hint={
+            <>
+              <span>
+                At least 20 characters.{" "}
+                {donation
+                  ? "Please do not include card, bank or mobile-money details, or sensitive personal information."
+                  : "Please leave out sensitive personal details."}
+              </span>
+              <span className="field-count" aria-hidden="true">
+                {messageLength.toLocaleString("en-GB")} /{" "}
+                {MESSAGE_MAX.toLocaleString("en-GB")}
+              </span>
+            </>
           }
-          aria-invalid={!!fields.message}
-          aria-describedby={
-            fields.message ? "message-help message-error" : "message-help"
-          }
-        />
-        <p id="message-help" className="small muted">
-          20–3,000 characters.{" "}
-          {topic === "donation"
-            ? "Please do not include card, bank or mobile-money details, or sensitive personal information."
-            : "Please leave out sensitive personal details."}
-        </p>
-        {fields.message && (
-          <p className="field-error" id="message-error">
-            {fields.message[0]}
-          </p>
-        )}
+        >
+          <textarea
+            name="message"
+            id="message"
+            rows={6}
+            required
+            minLength={20}
+            maxLength={MESSAGE_MAX}
+            onInput={(e) => setMessageLength(e.currentTarget.value.length)}
+            placeholder={
+              donation
+                ? "Tell us how you’d like to support the foundation…"
+                : "Tell us how you’d like to connect…"
+            }
+            aria-invalid={!!fields.message}
+            aria-describedby={describedBy("message", {
+              hint: true,
+              error: !!fields.message,
+            })}
+          />
+        </Field>
         <div className="honeypot" aria-hidden="true">
           <label htmlFor="website">Website</label>
           <input id="website" name="website" tabIndex={-1} autoComplete="off" />
         </div>
-        <div className="consent">
+        <div className={`consent ${fields.consent ? "has-error" : ""}`}>
           <input
             id="consent"
             name="consent"
             type="checkbox"
             required
             aria-invalid={!!fields.consent}
-            aria-describedby={fields.consent ? "consent-error" : undefined}
+            aria-describedby={describedBy("consent", {
+              error: !!fields.consent,
+            })}
           />
           <label htmlFor="consent">
             I have read the <Link href="/privacy">privacy notice</Link> and
             understand how my enquiry is handled.
           </label>
         </div>
-        {fields.consent && (
-          <p id="consent-error" className="field-error">
-            {fields.consent[0]}
-          </p>
-        )}
+        <FieldError id="consent" message={fields.consent?.[0]} />
       </fieldset>
-      {online && (
-        <>
-          <Script
-            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-            onReady={() => setScriptReady(true)}
-            onError={() => setVerification("error")}
-          />
-          <div ref={widget} className="turnstile" />
-          {verification === "expired" && (
-            <p className="small muted">
-              Spam protection expired and is refreshing.
-            </p>
-          )}
-          {verification === "error" && (
-            <p className="field-error">
-              Spam protection could not load.{" "}
-              {scriptReady ? (
-                <button
-                  type="button"
-                  className="link-button"
-                  onClick={resetVerification}
-                >
-                  Retry verification
-                </button>
-              ) : (
-                "Please reload the page."
-              )}{" "}
-              You can also email{" "}
-              <a href={`mailto:${site.email}`}>{site.email}</a>.
-            </p>
-          )}
-        </>
-      )}
+      <TurnstileField turnstile={turnstile} />
       <div className="form-actions">
         {phase === "unconfirmed" && retryPayload ? (
           <button
@@ -491,22 +423,22 @@ export function EnquiryForm({
           </button>
         ) : (
           <button type="submit" className="button" disabled={!canSend}>
+            {busy && <Spinner />}
             {busy
               ? "Sending…"
               : online
                 ? "Send enquiry"
                 : "Prepare email enquiry"}
-            <Arrow />
+            {!busy && <Arrow />}
           </button>
         )}
+        {online && !token && hydrated && verification !== "error" && (
+          <span className="field-hint">
+            The button becomes available after the spam-protection check.
+          </span>
+        )}
       </div>
-      <p
-        ref={statusRef}
-        className={`form-status ${phase}`}
-        role="status"
-        aria-live="polite"
-        tabIndex={-1}
-      >
+      <FormStatus tone={phase} statusRef={statusRef}>
         {status}
         {phase === "received" && reference && (
           <>
@@ -514,7 +446,7 @@ export function EnquiryForm({
             Your reference is <strong>{reference}</strong>.
           </>
         )}
-      </p>
+      </FormStatus>
       {phase === "unconfirmed" && (
         <p className="small muted">
           If “Try again” keeps failing, email{" "}

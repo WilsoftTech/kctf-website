@@ -6,6 +6,11 @@
 type Value = string | number | boolean | null | undefined;
 const SAFE_FIELDS = new Set([
   "enquiryId",
+  "donationId",
+  "provider",
+  "eventType",
+  "outcome",
+  "reconciled",
   "outboxId",
   "attempt",
   "maxAttempts",

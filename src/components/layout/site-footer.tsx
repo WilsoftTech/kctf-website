@@ -30,7 +30,7 @@ export function SiteFooter() {
                   {n.label}
                 </Link>
               ))}
-              <Link href="/donate" className="footer-donate">
+              <Link href="/donate/give" className="footer-donate">
                 <Heart />
                 Donate
               </Link>

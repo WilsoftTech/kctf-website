@@ -53,6 +53,7 @@ describe("canonical origin, robots, sitemap and metadata agree", () => {
       "/projects/community-lion-conservation",
       "/get-involved",
       "/donate",
+      "/donate/give",
       "/contact",
       "/privacy",
       "/terms",
@@ -187,6 +188,7 @@ const pages = {
     import("@/app/projects/community-lion-conservation/page"),
   "/get-involved": () => import("@/app/get-involved/page"),
   "/donate": () => import("@/app/donate/page"),
+  "/donate/give": () => import("@/app/donate/give/page"),
   "/contact": () => import("@/app/contact/page"),
   "/privacy": () => import("@/app/privacy/page"),
   "/terms": () => import("@/app/terms/page"),
@@ -333,7 +335,7 @@ describe("llms.txt", () => {
     expect(llms.headers.get("x-robots-tag")).toBe("noindex");
     expect(text).toMatch(/^# Kigezi Community Transformation Foundation/);
     const links = [...text.matchAll(/\]\((.+?)\)/g)].map((m) => m[1]);
-    expect(links.length).toBe(11);
+    expect(links.length).toBe(12);
     for (const link of links)
       expect(link).toMatch(/^https:\/\/kctf\.example\/[a-z]/);
     expect(text).not.toMatch(/localhost|\/api\//);

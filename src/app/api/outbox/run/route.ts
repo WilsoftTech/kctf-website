@@ -1,9 +1,11 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { readWorkerSecret } from "@/server/config";
 import { runOutbox } from "@/server/outbox/run";
+import { reconcilePayments } from "@/server/payments/reconcile";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Worst case per run: 5 jobs × 10s provider timeout, inside a 60s function limit.
+// Worst case per run: 5 jobs × 10s provider timeout plus a bounded payment
+// reconciliation (10 status checks, usually well under a second each), inside 60s.
 export const maxDuration = 60;
 function json(body: object, status: number) {
   return Response.json(body, {
@@ -23,8 +25,10 @@ async function handle(request: Request) {
   if (!secret) return json({ error: "Worker trigger is not configured." }, 503);
   if (!authorised(request.headers.get("authorization"), secret))
     return json({ error: "Unauthorised." }, 401);
+  // Uncertain donations first, so a confirmation found now is emailed in this run.
+  const payments = await reconcilePayments({ limit: 10 });
   const result = await runOutbox({ batchSize: 5, purge: true });
-  return json(result, result.ok ? 200 : 503);
+  return json({ ...result, payments }, result.ok ? 200 : 503);
 }
 export const GET = handle;
 export const POST = handle;

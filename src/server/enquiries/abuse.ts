@@ -33,14 +33,28 @@ export function abuseKey(kind: string, value: string, secret: string) {
   return `${kind}:${createHmac("sha256", secret).update(value).digest("hex")}`;
 }
 
+/** Separate counters for donation checkouts, so payments never use up enquiry limits. */
+export const DONATION_LIMITS = {
+  ip: { limit: 10, windowSeconds: 600 },
+  email: { limit: 6, windowSeconds: 3600 },
+  global: { limit: 300, windowSeconds: 3600 },
+} as const;
+
 export function limitsFor(
   { ip, email }: { ip?: string; email: string },
   secret: string,
+  scope: "enquiry" | "donation" = "enquiry",
 ): Limit[] {
+  // Enquiry keys keep their original, unprefixed names.
+  const prefix = scope === "donation" ? "pay-" : "";
+  const limits = scope === "donation" ? DONATION_LIMITS : LIMITS;
   return [
-    ...(ip ? [{ key: abuseKey("ip", ip, secret), ...LIMITS.ip }] : []),
-    { key: abuseKey("email", email.toLowerCase(), secret), ...LIMITS.email },
-    { key: "global", ...LIMITS.global },
+    ...(ip ? [{ key: abuseKey(`${prefix}ip`, ip, secret), ...limits.ip }] : []),
+    {
+      key: abuseKey(`${prefix}email`, email.toLowerCase(), secret),
+      ...limits.email,
+    },
+    { key: `${prefix}global`, ...limits.global },
   ];
 }
 

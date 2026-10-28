@@ -7,7 +7,10 @@ import { randomUUID } from "node:crypto";
 import type { DeliveryConfig } from "@/server/config";
 import type { Database } from "@/server/db";
 import { log, safeErrorCode } from "@/server/log";
-import { buildStaffNotification } from "@/server/outbox/notification";
+import {
+  buildDonationEmail,
+  buildStaffNotification,
+} from "@/server/outbox/notification";
 import { sendWithResend } from "@/server/outbox/resend";
 
 export const DEFAULT_BATCH_SIZE = 10;
@@ -36,7 +39,8 @@ export function retryDelayMs(attempt: number, random = Math.random) {
 
 type ClaimedJob = {
   id: string;
-  enquiryId: string;
+  enquiryId: string | null;
+  donationId: string | null;
   kind: string;
   attempts: number;
   maxAttempts: number;
@@ -94,7 +98,7 @@ export async function processOutbox(
            attempts = o.attempts + 1, updated_at = now()
       FROM due
      WHERE o.id = due.id
- RETURNING o.id, o.enquiry_id AS "enquiryId", o.kind, o.attempts,
+ RETURNING o.id, o.enquiry_id AS "enquiryId", o.donation_id AS "donationId", o.kind, o.attempts,
            o.max_attempts AS "maxAttempts", due.previous::text AS previous`;
   summary.claimed = jobs.length;
 
@@ -107,15 +111,30 @@ export async function processOutbox(
       });
     }
     const fenced = { id: job.id, claimToken: token };
-    const enquiry = await db.enquiry.findUnique({
-      where: { id: job.enquiryId },
-    });
-    if (!enquiry) {
+    // Each job belongs to exactly one enquiry or one (verified, succeeded) donation.
+    let payload: object | undefined;
+    let missing = "enquiry_missing";
+    if (job.enquiryId) {
+      const enquiry = await db.enquiry.findUnique({
+        where: { id: job.enquiryId },
+      });
+      if (enquiry) payload = buildStaffNotification(enquiry, delivery);
+    } else if (job.donationId) {
+      missing = "donation_missing";
+      const donation = await db.donation.findUnique({
+        where: { id: job.donationId },
+      });
+      // Only a confirmed donation is ever announced, even if a job exists.
+      if (donation?.status === "succeeded")
+        payload = buildDonationEmail(job.kind, donation, delivery);
+      else if (donation) missing = "donation_not_succeeded";
+    }
+    if (!payload) {
       await db.emailOutbox.updateMany({
         where: fenced,
         data: {
           status: "failed",
-          lastError: "enquiry_missing",
+          lastError: missing,
           claimToken: null,
           claimedAt: null,
         },
@@ -130,7 +149,7 @@ export async function processOutbox(
         apiUrl: delivery.resendApiUrl,
         apiKey: delivery.resendApiKey,
         idempotencyKey: `kctf-outbox/${job.id}`,
-        payload: buildStaffNotification(enquiry, delivery),
+        payload,
         fetchImpl: deps.fetchImpl,
         timeoutMs: providerTimeoutMs,
       });
@@ -173,7 +192,8 @@ export async function processOutbox(
     else summary.failed++;
     log(data.status === "failed" ? "error" : "info", `outbox_${data.status}`, {
       outboxId: job.id,
-      enquiryId: job.enquiryId,
+      enquiryId: job.enquiryId ?? undefined,
+      donationId: job.donationId ?? undefined,
       attempt: job.attempts,
       maxAttempts: job.maxAttempts,
       code: result.kind === "accepted" ? undefined : result.code,

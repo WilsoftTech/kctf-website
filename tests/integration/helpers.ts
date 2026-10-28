@@ -8,7 +8,7 @@ export const db: Database = createDb(inject("testDatabaseUrl"));
 
 export async function resetDatabase() {
   await db.$executeRawUnsafe(
-    "TRUNCATE email_outbox, enquiries, rate_limit_buckets RESTART IDENTITY CASCADE",
+    "TRUNCATE email_outbox, payment_events, donations, enquiries, rate_limit_buckets RESTART IDENTITY CASCADE",
   );
 }
 

@@ -1,4 +1,4 @@
-// KCTF enquiry persistence. Connection URLs live in prisma.config.ts (CLI) and
+// KCTF enquiry and donation persistence. Connection URLs live in prisma.config.ts (CLI) and
 // src/server/db.ts (application); see docs/DATABASE.md before changing this file.
 
 generator client {
@@ -59,11 +59,14 @@ model Enquiry {
   @@map("enquiries")
 }
 
-/// Durable email job. Claimed by workers with FOR UPDATE SKIP LOCKED and fenced by claim_token.
+/// Durable email job for exactly one enquiry or one donation (CHECK constraint in the
+/// migration). Claimed by workers with FOR UPDATE SKIP LOCKED and fenced by claim_token.
 model EmailOutbox {
   id                String       @id @default(uuid(7)) @db.Uuid
-  enquiryId         String       @map("enquiry_id") @db.Uuid
-  enquiry           Enquiry      @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  enquiryId         String?      @map("enquiry_id") @db.Uuid
+  enquiry           Enquiry?     @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  donationId        String?      @map("donation_id") @db.Uuid
+  donation          Donation?    @relation(fields: [donationId], references: [id], onDelete: Cascade)
   kind              String       @db.VarChar(64)
   status            OutboxStatus @default(pending)
   attempts          Int          @default(0)
@@ -79,8 +82,107 @@ model EmailOutbox {
   updatedAt         DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([enquiryId, kind])
+  @@unique([donationId, kind])
   @@index([status, nextAttemptAt])
   @@map("email_outbox")
+}
+
+enum PaymentProvider {
+  stripe
+  pesapal
+
+  @@map("payment_provider")
+}
+
+enum PaymentMethod {
+  card
+  mobile_money
+
+  @@map("payment_method")
+}
+
+enum PaymentMode {
+  test
+  live
+
+  @@map("payment_mode")
+}
+
+/// Allowed transitions live in src/server/payments/state.ts. `succeeded` never returns to
+/// an open state; `needs_review` (amount, currency or reference mismatch) is for operators.
+enum DonationStatus {
+  created
+  pending
+  succeeded
+  failed
+  cancelled
+  expired
+  reversed
+  needs_review
+
+  @@map("donation_status")
+}
+
+/// One online donation attempt. Separate from enquiries: a donation enquiry is never a
+/// payment, and this table never holds card numbers, PINs, OTPs or provider payloads.
+model Donation {
+  id                   String          @id @default(uuid(7)) @db.Uuid
+  /// Public reference shown to the donor and sent to the provider (KCTF-D-…).
+  reference            String          @unique @db.VarChar(32)
+  /// Client-generated key; uniqueness makes uncertain retries safe.
+  idempotencyKey       String          @unique @map("idempotency_key") @db.Uuid
+  /// SHA-256 of the normalised request, used to detect key reuse with different content.
+  requestHash          String          @map("request_hash") @db.Char(64)
+  /// SHA-256 of the unguessable status-page token; the token itself is never stored.
+  accessTokenHash      String          @unique @map("access_token_hash") @db.Char(64)
+  provider             PaymentProvider
+  method               PaymentMethod
+  mode                 PaymentMode
+  /// Amount in the currency's ISO 4217 minor unit (UGX has none, USD has cents).
+  amountMinor          Int             @map("amount_minor")
+  currency             String          @db.Char(3)
+  status               DonationStatus  @default(created)
+  donorName            String          @map("donor_name") @db.VarChar(100)
+  donorEmail           String          @map("donor_email") @db.VarChar(254)
+  message              String?         @db.VarChar(500)
+  privacyNoticeVersion String          @map("privacy_notice_version") @db.VarChar(32)
+  /// Stripe Checkout Session id or Pesapal OrderTrackingId.
+  providerSessionId    String?         @unique @map("provider_session_id") @db.VarChar(255)
+  /// Stripe PaymentIntent id or Pesapal confirmation code, once known.
+  providerPaymentId    String?         @map("provider_payment_id") @db.VarChar(255)
+  /// Hosted checkout URL, kept so a retried request returns the same checkout.
+  checkoutUrl          String?         @map("checkout_url") @db.VarChar(2048)
+  /// Short code only (e.g. amount_mismatch), never provider text.
+  statusReason         String?         @map("status_reason") @db.VarChar(64)
+  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// When the provider confirmed the final state.
+  settledAt            DateTime?       @map("settled_at") @db.Timestamptz(3)
+  /// Last time the server asked the provider for the status (reconciliation throttle).
+  lastCheckedAt        DateTime?       @map("last_checked_at") @db.Timestamptz(3)
+  outbox               EmailOutbox[]
+  events               PaymentEvent[]
+
+  @@index([status, createdAt])
+  @@map("donations")
+}
+
+/// Provider notifications already processed. The unique key stops a redelivered webhook
+/// being applied twice. Only identifiers are kept, never the payload.
+model PaymentEvent {
+  id         String          @id @default(uuid(7)) @db.Uuid
+  provider   PaymentProvider
+  eventId    String          @map("event_id") @db.VarChar(255)
+  type       String          @db.VarChar(100)
+  donationId String?         @map("donation_id") @db.Uuid
+  donation   Donation?       @relation(fields: [donationId], references: [id], onDelete: SetNull)
+  /// What the event did (applied, ignored, unmatched, needs_review …).
+  outcome    String          @db.VarChar(40)
+  receivedAt DateTime        @default(now()) @map("received_at") @db.Timestamptz(3)
+
+  @@unique([provider, eventId])
+  @@index([donationId])
+  @@map("payment_events")
 }
 
 /// Short-lived shared abuse counters. Keys are HMACs, never raw IP or email addresses.

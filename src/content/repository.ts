@@ -11,7 +11,7 @@ import {
   targets,
   type PhotoKey,
 } from "@/content/site";
-import { donationPage } from "@/content/donate";
+import { donationPage, givePage } from "@/content/donate";
 import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
 
 export type SiteSettings = typeof site;
@@ -21,6 +21,7 @@ export type Photo = (typeof photos)[PhotoKey];
 export type ProjectTarget = (typeof targets)[number];
 export type ProjectStage = (typeof projectStages)[number];
 export type DonationPage = typeof donationPage;
+export type GivePage = typeof givePage;
 
 export type PublicRoute = {
   path: string;
@@ -39,6 +40,7 @@ export interface ContentRepository {
   getProgrammes(): Promise<readonly Programme[]>;
   getPhoto(key: PhotoKey): Promise<Photo>;
   getDonationPage(): Promise<DonationPage>;
+  getGivePage(): Promise<GivePage>;
   /** Every public, published, indexable route. Drives the sitemap. */
   getPublicRoutes(): Promise<readonly PublicRoute[]>;
 }
@@ -56,6 +58,7 @@ const staticRoutes: readonly PublicRoute[] = [
   },
   { path: "/get-involved", title: "Get involved" },
   { path: "/donate", title: "Donate" },
+  { path: "/donate/give", title: "Give online" },
   { path: "/contact", title: "Contact" },
   {
     path: "/privacy",
@@ -74,6 +77,7 @@ export const staticContentRepository: ContentRepository = {
   getProgrammes: async () => programmes,
   getPhoto: async (key) => photos[key],
   getDonationPage: async () => donationPage,
+  getGivePage: async () => givePage,
   getPublicRoutes: async () => staticRoutes,
 };
 

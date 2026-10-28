@@ -42,6 +42,7 @@ try {
       select: {
         id: true,
         enquiryId: true,
+        donationId: true,
         attempts: true,
         lastError: true,
         updatedAt: true,

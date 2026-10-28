@@ -1,5 +1,5 @@
 // Cloudflare Turnstile server-side verification: the token must be valid, issued for this
-// site's hostname and for the `enquiry` action. Tokens are single-use and never logged.
+// site's hostname and for the expected action (`enquiry` or `donation`). Tokens are single-use and never logged.
 export type TurnstileOutcome = "valid" | "invalid" | "unavailable";
 
 export async function verifyTurnstile({
@@ -8,6 +8,7 @@ export async function verifyTurnstile({
   hostname,
   verifyUrl,
   remoteIp,
+  action = "enquiry",
   fetchImpl = fetch,
 }: {
   token: string;
@@ -15,6 +16,7 @@ export async function verifyTurnstile({
   hostname: string;
   verifyUrl: string;
   remoteIp?: string;
+  action?: "enquiry" | "donation";
   fetchImpl?: typeof fetch;
 }): Promise<TurnstileOutcome> {
   if (!token) return "invalid";
@@ -34,7 +36,7 @@ export async function verifyTurnstile({
     };
     return result.success === true &&
       result.hostname === hostname &&
-      result.action === "enquiry"
+      result.action === action
       ? "valid"
       : "invalid";
   } catch {

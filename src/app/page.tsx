@@ -256,7 +256,7 @@ export default function Home() {
             <div className="actions">
               <DonateButton label="Donate" />
               <Link href="/donate#give" className="text-link">
-                How giving works <Arrow diagonal />
+                Discuss a donation <Arrow diagonal />
               </Link>
             </div>
             <p className="small muted">{homeDonation.note}</p>

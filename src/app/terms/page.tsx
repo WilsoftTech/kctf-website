@@ -36,9 +36,13 @@ export default function Terms() {
         <p>
           Submitting an enquiry does not confirm a volunteer placement,
           membership, partnership or grant. Any future arrangement requires
-          direct discussion and appropriate confirmation. The website does not
-          accept online donations; a donation enquiry is a conversation, not a
-          payment or pledge.
+          direct discussion and appropriate confirmation. A donation enquiry is
+          a conversation, not a payment or pledge. Where online giving is
+          offered, one-time gifts are paid on the payment provider’s own page
+          (Stripe for cards, Pesapal for Mobile Money) and count as received
+          only once the provider confirms them. An acknowledgement confirms a
+          payment received; it is not a tax receipt, and no tax relief is
+          implied.
         </p>
         <h2>Information and boundaries</h2>
         <p>

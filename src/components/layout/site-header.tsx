@@ -189,7 +189,7 @@ export function SiteHeader() {
             <Link href="/get-involved" className="header-action">
               Let’s connect <Arrow diagonal />
             </Link>
-            <DonateButton current={pathname === "/donate"} />
+            <DonateButton current={pathname.startsWith("/donate")} />
           </div>
           <button
             className="menu-toggle"
@@ -239,7 +239,7 @@ export function SiteHeader() {
         <DonateButton
           className="mobile-donate"
           label="Donate to KCTF"
-          current={pathname === "/donate"}
+          current={pathname.startsWith("/donate")}
           onClick={closeMobile}
         />
         <p>

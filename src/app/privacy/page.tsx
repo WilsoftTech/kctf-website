@@ -3,11 +3,12 @@ import { site } from "@/content/site";
 import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
 import { enquiryConfig, readRetentionConfig } from "@/server/config";
 import { metadata } from "@/lib/seo";
+import { paymentsConfig } from "@/server/payments/config";
 export const dynamic = "force-dynamic";
 export const generateMetadata = () =>
   metadata(
     "Privacy notice",
-    "How the KCTF website handles enquiries, stored records, email delivery, spam protection, the optional Google map and your privacy choices.",
+    "How the KCTF website handles enquiries, online donations, stored records, email delivery, spam protection, the optional Google map and your privacy choices.",
     "/privacy",
   );
 export default function Privacy() {
@@ -17,6 +18,14 @@ export default function Privacy() {
   const retention = readRetentionConfig();
   const retentionDays =
     retention.approved && retention.days ? retention.days : undefined;
+  const payments = paymentsConfig().config;
+  const paymentMethods = payments
+    ? [
+        payments.methods.card && "card payments through Stripe",
+        payments.methods.mobile_money &&
+          "Mobile Money (MTN MoMo and Airtel Money) through Pesapal",
+      ].filter(Boolean)
+    : [];
   return (
     <>
       <PageHeader
@@ -24,7 +33,7 @@ export default function Privacy() {
         title="Your information. Handled with care."
         trail={[{ name: "Privacy notice", path: "/privacy" }]}
       >
-        How this website handles your visit and enquiries.
+        How this website handles your visit, enquiries and online donations.
       </PageHeader>
       <article className="container legal">
         <p>
@@ -58,9 +67,10 @@ export default function Privacy() {
         </p>
         <p>
           Donation enquiries, sent from the donate or contact page, are handled
-          in the same way as other enquiries. The website does not process
-          payments and never asks for card, bank or mobile-money details, so
-          please do not include them.
+          in the same way as other enquiries. An enquiry is never a payment: the
+          enquiry form never asks for card, bank or mobile-money details, so
+          please do not include them. Online donations are separate and are
+          described below.
         </p>
         <h2>Why information is used</h2>
         <p>
@@ -103,6 +113,47 @@ export default function Privacy() {
           and to people who administer the website and its database. Service
           providers process information only to provide their services.
         </p>
+        <h2 id="donations">Online donations</h2>
+        <p>
+          {paymentMethods.length
+            ? `Online giving is active for ${paymentMethods.join(" and ")}${payments?.mode === "test" ? ", in the providers’ test mode: no real money moves" : ""}.`
+            : "Online giving is not active at the moment. Nothing can be paid through this website."}
+        </p>
+        <p>
+          When you give online, the website records your name, email address,
+          the amount, currency and payment method you chose, an optional
+          message, a donation reference, the time, confirmation that you read
+          this notice (with its version) and the payment status reported by the
+          provider, with the provider’s reference for the payment. A one-time
+          form key and a one-way digest of your private status link are kept so
+          that retries do not create a second donation. Donation records are
+          kept separately from enquiries.
+        </p>
+        <p>
+          You pay on the provider’s own secure page: <strong>Stripe</strong> for
+          cards and <strong>Pesapal</strong> for Mobile Money. They collect your
+          card details or mobile-money number under their own privacy terms;
+          this website never receives your card number, security code,
+          mobile-money PIN or one-time codes, and will never ask for them. The
+          website sends the provider your name, email address, the amount and
+          the donation reference so it can process the payment. The website
+          stores only short status codes from the provider, not its full
+          messages.
+        </p>
+        <p>
+          A donation is treated as received only after the provider confirms it
+          to the website’s server. You then receive an email acknowledgement
+          through Resend, and the foundation’s staff inbox receives a
+          notification with your name, email address, amount and message. The
+          acknowledgement confirms a payment; it is not a tax receipt.
+        </p>
+        <p>
+          Donation records are financial records and are not removed by the
+          enquiry retention schedule. The foundation has not yet approved a
+          retention period for them; it will be stated here before live payments
+          are accepted. Stripe and Pesapal keep their own records under their
+          legal obligations.
+        </p>
         <h2>Spam protection and technical records</h2>
         <p>
           To limit abuse, the website keeps short-lived counters derived from
@@ -139,8 +190,10 @@ export default function Privacy() {
           The website uses locally hosted fonts and photographs and does not
           install advertising or analytics trackers. When online enquiries are
           active, Cloudflare Turnstile runs on the contact and donate pages
-          under its own privacy terms. Google may set cookies if you choose to
-          load the optional map described below.
+          under its own privacy terms, and on the online donation page while
+          online giving is active. The Stripe and Pesapal payment pages may use
+          their own cookies for security and fraud prevention. Google may set
+          cookies if you choose to load the optional map described below.
         </p>
         <h2 id="map">Optional Google map</h2>
         <p>

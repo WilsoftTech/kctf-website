@@ -4,19 +4,33 @@ import { EnquiryForm } from "@/components/sections/enquiry-form";
 import { content } from "@/content/repository";
 import { site } from "@/content/site";
 import { enquiryConfig } from "@/server/config";
+import { paymentsConfig } from "@/server/payments/config";
 import { PageHeader } from "@/components/layout/page-header";
 import { JsonLd } from "@/components/seo/structured-data";
 import { faqPage, metadata } from "@/lib/seo";
-// Online payments are not available: this page offers donation enquiries through the
-// shared enquiry pipeline. It renders per request because the form mode is runtime config.
+// Ways to support the foundation. Online gifts happen on /donate/give; this page keeps the
+// donation-enquiry form (shared enquiry pipeline: never a payment). It renders per request
+// because the form mode and payment availability are runtime configuration.
 export const dynamic = "force-dynamic";
+/** True when at least one online payment method is configured and usable. */
+const onlineGiving = () => !!paymentsConfig().config;
 export async function generateMetadata() {
   const { seo } = await content.getDonationPage();
-  return metadata(seo.title, seo.description, "/donate");
+  return metadata(
+    seo.title,
+    onlineGiving() ? seo.descriptionOnline : seo.description,
+    "/donate",
+  );
 }
 export default async function Donate() {
   const page = await content.getDonationPage();
   const enquiries = enquiryConfig();
+  const online = onlineGiving();
+  const panel = online ? page.panelOnline : page.panel;
+  const faq = page.faq.items.map(
+    ([question, answer, answerOnline]) =>
+      [question, online && answerOnline ? answerOnline : answer] as const,
+  );
   return (
     <>
       <PageHeader
@@ -35,7 +49,16 @@ export default async function Donate() {
               <p key={p}>{p}</p>
             ))}
             <div className="actions">
-              <Button href="#give">Enquire about donating</Button>
+              {online ? (
+                <>
+                  <Button href="/donate/give">Give online</Button>
+                  <Button href="#give" outline>
+                    Discuss a donation
+                  </Button>
+                </>
+              ) : (
+                <Button href="#give">Enquire about donating</Button>
+              )}
             </div>
           </div>
         </div>
@@ -76,11 +99,11 @@ export default async function Donate() {
       <section className="section" id="give" aria-labelledby="give-title">
         <div className="container donate-grid">
           <div className="donate-panel dark">
-            <span className="status">{page.panel.status}</span>
-            <h2 id="give-title">{page.panel.title}</h2>
-            <p>{page.panel.body}</p>
+            <span className="status">{panel.status}</span>
+            <h2 id="give-title">{panel.title}</h2>
+            <p>{panel.body}</p>
             <ol>
-              {page.panel.steps.map(([title, body], i) => (
+              {panel.steps.map(([title, body], i) => (
                 <li key={title}>
                   <span className="index">0{i + 1}</span>
                   <span>
@@ -90,6 +113,12 @@ export default async function Donate() {
                 </li>
               ))}
             </ol>
+            {online && (
+              <p className="small">
+                Ready to give now?{" "}
+                <Link href="/donate/give">Use the secure donation page</Link>.
+              </p>
+            )}
             <p className="small">
               Prefer to talk directly? Email{" "}
               <a href={`mailto:${site.email}`}>{site.email}</a> or call{" "}
@@ -144,7 +173,7 @@ export default async function Donate() {
             .
           </Heading>
           <div className="faq">
-            {page.faq.items.map(([q, a]) => (
+            {faq.map(([q, a]) => (
               <details key={q}>
                 <summary>
                   <h3>{q}</h3>
@@ -155,7 +184,7 @@ export default async function Donate() {
             ))}
           </div>
         </div>
-        <JsonLd graph={faqPage("/donate", page.faq.items)} />
+        <JsonLd graph={faqPage("/donate", faq)} />
         <p className="container small muted photo-note">
           {page.photoNote} See the{" "}
           <Link className="inline-link" href="/credits">

@@ -76,9 +76,10 @@ export default function Involved() {
               please contact the founder.
             </p>
             <p>
-              The website does not take payments or display unconfirmed banking
-              details. You can send a donation enquiry and the foundation will
-              reply directly.
+              The website never displays bank or mobile-money numbers. Where
+              online giving is available it runs only through the secure
+              donation page; you can also send a donation enquiry and the
+              foundation will reply directly.
             </p>
             <Button href="/donate">Ways to donate</Button>
           </div>

@@ -17,7 +17,9 @@ const notes: Record<string, string> = {
     "Proposed 12-month initiative (planning stage): approach, planned outputs, indicative budget and boundaries",
   "/get-involved": "Volunteering interest and partnership conversations",
   "/donate":
-    "How to enquire about donating. Online giving is not available; no payments are taken",
+    "Ways to support the foundation and the donation-enquiry form (an enquiry is never a payment)",
+  "/donate/give":
+    "One-time online gifts by card (Stripe) or Mobile Money (Pesapal) when configured; acknowledgements are not tax receipts",
   "/contact": "Email, telephone, address and enquiry form",
   "/privacy": "Privacy notice",
   "/terms": "Website terms, including the status of the foundation",
