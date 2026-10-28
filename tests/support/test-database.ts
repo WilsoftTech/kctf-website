@@ -29,7 +29,7 @@ function assertDisposable(url: string) {
     throw new Error(
       "TEST_DATABASE_URL must name a database containing `test`.",
     );
-  for (const key of ["DATABASE_URL", "DIRECT_URL"]) {
+  for (const key of ["DATABASE_URL", "DIRECT_URL", "DATABASE_URL_UNPOOLED"]) {
     const other = process.env[key];
     if (!other) continue;
     const o = new URL(other);
@@ -50,6 +50,7 @@ function prisma(args: string[], url: string) {
       env: {
         ...process.env,
         DIRECT_URL: url,
+        DATABASE_URL_UNPOOLED: url,
         DATABASE_URL: url,
         SHADOW_DATABASE_URL: "",
         SITE_ENVIRONMENT: "test",

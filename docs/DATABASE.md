@@ -28,7 +28,7 @@ There are no CMS tables. See `docs/CMS-ROADMAP.md`.
 | `DIRECT_URL`          | The Prisma CLI through `prisma.config.ts` (`migrate deploy`, `migrate status`, `migrate diff`) | **Direct** connection string for the same database                        |
 | `SHADOW_DATABASE_URL` | Optional; `prisma migrate dev` only                                                            | A separate, disposable database. Never production.                        |
 
-Prisma 7 has no `directUrl` in the schema; the CLI uses `datasource.url` from `prisma.config.ts`, which is set to `DIRECT_URL`. The application connects with `DATABASE_URL` through `@prisma/adapter-pg` (node-postgres over TCP), which works with Neon's pooled endpoint from Node.js hosts. Switching to `@prisma/adapter-neon` later is a one-file change in `src/server/db.ts`.
+Prisma 7 has no `directUrl` in the schema; the CLI uses `datasource.url` from `prisma.config.ts`, which is set to `DIRECT_URL`, or to `DATABASE_URL_UNPOOLED` (the name `neon env pull` uses) when `DIRECT_URL` is empty. The application connects with `DATABASE_URL` through `@prisma/adapter-pg` (node-postgres over TCP), which works with Neon's pooled endpoint from Node.js hosts. `src/server/db.ts` creates the `pg` pool itself and registers it with `attachDatabasePool` from `@vercel/functions`, as Neon recommends for node-postgres on Vercel Fluid compute; the call does nothing on other hosts. Switching to `@prisma/adapter-neon` later is a one-file change in `src/server/db.ts`.
 
 The client is a lazily created singleton (five connections per instance, five-second connection timeout). Builds and email-draft mode never connect.
 
@@ -40,6 +40,8 @@ The client is a lazily created singleton (five connections per instance, five-se
 2. Use the default branch for production. Create a separate branch (for example `development`) for local work and, if wanted, `preview`/`staging` branches. Never point development or tests at the production branch.
 3. For each branch, copy the **pooled** string into `DATABASE_URL` and the **direct** string into `DIRECT_URL` for that environment only.
 4. Use the database owner role created by Neon for migrations. The migrations need table/enum creation and `ALTER DATABASE` on their own database.
+
+The repository is linked to Neon project `orange-breeze-85323397` with the Neon CLI (`neon init`, 28 October 2026). `neon.ts` declares the project's services (Postgres only) and branch policy: new non-default branches expire after 7 days. `.neon` records the linked organisation, project and branch and is gitignored. `neon env pull` writes `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED` (direct) and `NEON_BRANCH` into `.env.local` for the linked branch. `neon init` linked the `production` branch, so before local development run `neon checkout <dev-branch> --create` to switch `.env.local` to a development branch (step 2).
 
 ## Safe migration workflow
 

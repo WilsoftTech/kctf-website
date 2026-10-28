@@ -9,3 +9,4 @@ src/generated/
 .test-db/
 test-results/
 playwright-report/
+.neon

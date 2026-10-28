@@ -2,19 +2,25 @@
 // string (host contains `-pooler`); migrations use DIRECT_URL via prisma.config.ts.
 import "server-only";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { attachDatabasePool } from "@vercel/functions";
+import { Pool } from "pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { readDatabaseUrl } from "@/server/config";
 
 export type Database = PrismaClient;
 
 export function createDb(connectionString: string): Database {
-  const adapter = new PrismaPg({
+  const pool = new Pool({
     connectionString,
     // Small per-instance pool: Neon's PgBouncer pooler multiplexes across instances.
     max: 5,
     connectionTimeoutMillis: 5_000,
     idleTimeoutMillis: 10_000,
   });
+  // On Vercel Fluid compute, keeps the instance alive until idle connections are closed
+  // (Neon's recommendation for node-postgres there). A no-op on other hosts.
+  attachDatabasePool(pool);
+  const adapter = new PrismaPg(pool, { disposeExternalPool: true });
   return new PrismaClient({ adapter });
 }
 

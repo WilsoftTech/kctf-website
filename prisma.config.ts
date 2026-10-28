@@ -1,12 +1,14 @@
 // Prisma CLI configuration. The CLI (migrate, status, diff) uses DIRECT_URL — Neon's
-// non-pooled connection. The application uses the pooled DATABASE_URL in src/server/db.ts.
+// non-pooled connection, written as DATABASE_URL_UNPOOLED by `neon env pull`. The
+// application uses the pooled DATABASE_URL in src/server/db.ts.
 import nextEnv from "@next/env";
 import { defineConfig } from "prisma/config";
 
 // Load .env / .env.local the same way Next.js does, so the CLI and app agree.
 nextEnv.loadEnvConfig(process.cwd());
 
-const directUrl = process.env.DIRECT_URL || undefined;
+const directUrl =
+  process.env.DIRECT_URL || process.env.DATABASE_URL_UNPOOLED || undefined;
 const shadowDatabaseUrl = process.env.SHADOW_DATABASE_URL || undefined;
 const args = process.argv.slice(2).join(" ");
 
