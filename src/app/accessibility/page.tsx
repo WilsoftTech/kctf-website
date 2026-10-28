@@ -1,16 +1,20 @@
-import { PageHeader } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { site } from "@/content/site";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
-    "Accessibility",
-    "KCTF’s approach to accessible navigation, readable content, reduced motion and enquiry support.",
+    "Accessibility statement",
+    "How the KCTF website supports keyboard navigation, readable content and reduced motion, its known limitations and how to report a barrier.",
     "/accessibility",
   );
 export default function Accessibility() {
   return (
     <>
-      <PageHeader eyebrow="Accessibility" title="A website for more people.">
+      <PageHeader
+        eyebrow="Accessibility"
+        title="A website for more people."
+        trail={[{ name: "Accessibility", path: "/accessibility" }]}
+      >
         We aim to make the foundation’s information readable, navigable and
         accessible.
       </PageHeader>

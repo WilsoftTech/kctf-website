@@ -12,9 +12,9 @@ export const donationPage = {
   title: "Help people and nature thrive.",
   lead: "Your support could help a community-led foundation in Rukungiri begin its work for wildlife, landscapes, climate resilience and human rights.",
   seo: {
-    title: "Donate",
+    title: "Donate: how to support the foundation",
     description:
-      "Enquire about supporting Kigezi Community Transformation Foundation’s proposed work in wildlife conservation, environmental protection, climate action and justice and human rights in Rukungiri, Uganda.",
+      "Enquire about supporting KCTF’s proposed conservation, climate and human-rights work in Rukungiri, Uganda. Online giving is not yet available.",
   },
   intro: {
     eyebrow: "Why support matters",

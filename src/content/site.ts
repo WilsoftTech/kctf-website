@@ -7,11 +7,50 @@ export const site = {
   founder: "Tushabe Isaac",
   address:
     "Bunura Cell, Rwakabengo Ward, Southern Division, Rukungiri Municipality, Uganda",
+  postalAddress: {
+    streetAddress: "Bunura Cell, Rwakabengo Ward, Southern Division",
+    addressLocality: "Rukungiri Municipality",
+    addressCountry: "UG",
+  },
+  /** One factual sentence reused for search snippets, structured data and llms.txt. */
+  summary:
+    "Kigezi Community Transformation Foundation (KCTF) is a community-led foundation in Rukungiri, Uganda, at its planning stage, whose proposed work connects wildlife conservation, environmental protection, climate action, and justice and human rights.",
   mission:
     "Work with communities and responsible public institutions to protect wildlife and habitats, strengthen climate resilience, promote environmental stewardship, and advance justice and human rights through lawful, inclusive action.",
   vision:
     "Communities enjoying a healthy environment, a stable climate, respect for human rights, and peaceful coexistence with thriving wildlife.",
 };
+// Map on /contact. `verifiedPin` stays false until the foundation confirms an exact office
+// location (for example a Google Maps place ID). Until then the map is an address search,
+// labelled as approximate, and no coordinates are published. See docs/SEO.md.
+export const officeLocation = {
+  query: site.address,
+  verifiedPin: false,
+};
+// Short, factual answers to common visitor questions, shown on /about and described by
+// FAQPage structured data. Every answer must match statements made elsewhere on the site.
+export const aboutQuestions = [
+  [
+    "What is KCTF?",
+    "Kigezi Community Transformation Foundation (KCTF) is a community-led foundation founded by Tushabe Isaac in Rukungiri, Uganda. Its purpose connects wildlife conservation, environmental protection, climate action, and justice and human rights.",
+  ],
+  [
+    "Where is the foundation based?",
+    "Bunura Cell, Rwakabengo Ward, Southern Division, Rukungiri Municipality, Uganda. The proposed initial operational area is Bunura Cell, subject to the scope authorised at registration.",
+  ],
+  [
+    "Is KCTF a registered organisation?",
+    "Not yet confirmed. The foundation’s constitution is proposed and subject to adoption and registration. This website does not claim that legal registration is complete, and no registration number or tax-exempt status is claimed.",
+  ],
+  [
+    "Is the Community Lion Conservation project running?",
+    "No. It is a proposed 12-month initiative at the planning stage. Its targets are planned outputs, not completed results, and delivery depends on funding, confirmed locations and the relevant approvals.",
+  ],
+  [
+    "How can I support or get involved?",
+    "You can express interest in future volunteering, start a partnership conversation or send a donation enquiry. The website does not take payments.",
+  ],
+] as const;
 export const navigation = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },

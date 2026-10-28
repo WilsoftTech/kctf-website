@@ -10,7 +10,11 @@ Added 27 October 2026. Intended host: **Vercel** (Node.js runtime). Any Node hos
 | ---------------------------------------- | ------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SITE_ENVIRONMENT`                       | B, R   | Production, staging, preview          | `production`, `staging`, `preview`, `development` (default), `test`.                                                                                                                   |
 | `SITE_URL`                               | B, R   | Production; online enquiries anywhere | Production: public `https` origin only. Rejects localhost/loopback/private hosts, credentials, ports, path, query, fragment. An invalid value fails the build.                         |
-| `SITE_INDEXING`                          | B      | No                                    | `index` only takes effect in production. Default `noindex`.                                                                                                                            |
+| `SITE_INDEXING`                          | B      | No                                    | `index` only takes effect in production. Default `noindex`. Ignored (noindex) on Vercel when `VERCEL_ENV` is not `production`.                                                         |
+| `SITE_AI_TRAINING`                       | B      | No                                    | `allow` (default) or `disallow`: opts out of AI-training crawlers in `robots.txt` only. Owner decision; see `docs/SEO.md`.                                                             |
+| `GOOGLE_SITE_VERIFICATION`               | B      | No                                    | Public token for the Search Console HTML-tag method. Rendered only when indexable. DNS verification is preferred.                                                                      |
+| `BING_SITE_VERIFICATION`                 | B      | No                                    | Public `msvalidate.01` token for Bing Webmaster Tools. Rendered only when indexable.                                                                                                   |
+| `GOOGLE_MAPS_EMBED_API_KEY`              | R      | No                                    | Public, browser-visible Maps Embed API key for the click-to-load map on `/contact`. Restrict to the Maps Embed API and the site's referrers. Unset = links only.                       |
 | `DATABASE_URL`                           | R, CLI | Online enquiries; outbox; retention   | Neon pooled string. Must not be local in production/staging.                                                                                                                           |
 | `DIRECT_URL`                             | CLI    | Migrations                            | Neon direct string. Not needed by the running site.                                                                                                                                    |
 | `SHADOW_DATABASE_URL`                    | CLI    | No                                    | Development `migrate dev` only.                                                                                                                                                        |
@@ -28,7 +32,7 @@ Added 27 October 2026. Intended host: **Vercel** (Node.js runtime). Any Node hos
 | `TURNSTILE_VERIFY_URL`, `RESEND_API_URL` | R      | No                                    | Local test doubles. Refused unless `SITE_ENVIRONMENT` is `development` or `test` **and** the URL is loopback.                                                                          |
 | `TEST_DATABASE_URL`                      | Tests  | No                                    | Disposable database for integration/browser tests.                                                                                                                                     |
 
-`.env.example` lists exactly these variables. Variable names and rules are validated in `src/lib/site-config.ts` (site) and `src/server/config.ts` (server).
+`.env.example` lists exactly these variables (`VERCEL_ENV` is set by Vercel itself). Variable names and rules are validated in `src/lib/site-config.ts` (site) and `src/server/config.ts` (server).
 
 ## Vercel project setup
 
@@ -45,11 +49,11 @@ Added 27 October 2026. Intended host: **Vercel** (Node.js runtime). Any Node hos
 3. Verify the Resend sending domain and sender; create the Turnstile widget for the production hostname.
 4. Set the production variables (above). Keep `ENQUIRIES_ENABLED=false` for the first deploy.
 5. Apply migrations deliberately: `npm run db:status`, then `npm run db:deploy -- --target <direct host>` (see `docs/DATABASE.md`).
-6. Deploy. Check `/robots.txt`, `/sitemap.xml`, canonical tags and the `X-Robots-Tag` header match the intended indexing.
+6. Deploy. Check `/robots.txt`, `/sitemap.xml`, `/llms.txt`, canonical tags and the `X-Robots-Tag` header match the intended indexing. Search-console setup is in `docs/SEO.md` §8.
 7. Set `ENQUIRIES_ENABLED=true` (plus retention values) and redeploy or restart. Confirm `/contact` shows the online form and `/privacy` states the approved period.
 8. With explicit authorisation, submit one live test enquiry. Confirm the reference, the inbox notification, Reply-To behaviour, `npm run outbox -- status` showing `sent`, then delete the test enquiry with the foundation's agreed process.
 9. Trigger the cron once (`curl -H "Authorization: Bearer $CRON_SECRET" https://<site>/api/outbox/run`) and confirm a `200` with counts.
 
 ## Security headers
 
-Production responses include CSP (Turnstile allowed), `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, referrer and permissions policies. Non-indexable deployments add `X-Robots-Tag: noindex`. The host terminates HTTPS and supplies HSTS.
+Production responses include CSP (Turnstile allowed; `frame-src` also allows only the Google Maps Embed API path `https://www.google.com/maps/embed/v1/` for the click-to-load contact map), `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, referrer and permissions policies. Non-indexable deployments add `X-Robots-Tag: noindex` to every response; indexable ones add it to `/api/*`. The host terminates HTTPS and supplies HSTS.

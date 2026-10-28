@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { mapsEmbedPrefix } from "./src/lib/maps";
 import { readSiteConfig } from "./src/lib/site-config";
 
 // Validated at build and server start; a production build with an invalid SITE_URL fails here.
@@ -11,7 +12,9 @@ const productionCsp = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "connect-src 'self' https://challenges.cloudflare.com",
-  "frame-src https://challenges.cloudflare.com",
+  // Turnstile, and the optional click-to-load Google map on /contact (Maps Embed API
+  // path only; the map's own subresources load inside Google's frame).
+  `frame-src https://challenges.cloudflare.com ${mapsEmbedPrefix}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -20,6 +23,8 @@ const productionCsp = [
 const config: NextConfig = {
   poweredByHeader: false,
   turbopack: { root: process.cwd() },
+  // AVIF first: measured image transfer on mobile fell by roughly 65-85% (docs/SEO.md).
+  images: { formats: ["image/avif", "image/webp"] },
   async headers() {
     return [
       {
@@ -40,6 +45,11 @@ const config: NextConfig = {
             ? [{ key: "Content-Security-Policy", value: productionCsp }]
             : []),
         ],
+      },
+      // API responses are never search results, even on an indexable deployment.
+      {
+        source: "/api/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex" }],
       },
     ];
   },

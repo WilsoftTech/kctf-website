@@ -14,6 +14,7 @@ export function SiteFooter() {
                 alt={site.name}
                 width={220}
                 height={110}
+                sizes="220px"
               />
             </Link>
             <p>People. Nature. A shared future.</p>

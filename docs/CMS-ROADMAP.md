@@ -5,7 +5,7 @@ Status: **planned, not started.** No authentication, admin dashboard, CMS tables
 ## Today's boundary
 
 - Public content lives in `src/content/site.ts` (settings, navigation, programmes, photographs, project targets and stages) and in page narratives under `src/app/**/page.tsx`.
-- `src/content/repository.ts` defines `ContentRepository` and exports `content`, currently the static implementation. The sitemap and programmes page already read through it. Other server pages still import the static modules directly and should move to the repository as each content type is migrated.
+- `src/content/repository.ts` defines `ContentRepository` and exports `content`, currently the static implementation. The sitemap, `/llms.txt` and programmes page already read through it. `getPublicRoutes()` returns each page's path, title and optional genuine `lastModified` date; a CMS must return published records only and supply real modification dates (see `docs/SEO.md`). Other server pages still import the static modules directly and should move to the repository as each content type is migrated.
 - The header and mobile menu are client components that import static navigation and programme lists. When those become CMS-managed, the server layout should read them and pass them as props.
 
 A CMS implementation replaces `staticContentRepository` with one that returns **published** records only. Pages and metadata routes keep calling `content.*`.

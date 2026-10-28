@@ -107,7 +107,13 @@ export default async function globalSetup() {
     process.execPath,
     [next, "start", "--port", String(E2E_PORT)],
     {
-      env: { ...env, NEXT_PUBLIC_TURNSTILE_SITE_KEY: "e2e-runtime-site-key" },
+      env: {
+        ...env,
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: "e2e-runtime-site-key",
+        // Synthetic, well-formed Maps Embed key. Browser tests intercept every Google
+        // request, so nothing reaches Google.
+        GOOGLE_MAPS_EMBED_API_KEY: `AIza${"e2e".repeat(11)}xx`,
+      },
       stdio: "ignore",
     },
   );

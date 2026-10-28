@@ -137,28 +137,6 @@ export function Photo({
     </figure>
   );
 }
-export function PageHeader({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="page-header container">
-      <nav aria-label="Breadcrumb" className="breadcrumbs">
-        <Link href="/">Home</Link>
-        <span aria-hidden="true">/</span>
-        <span>{eyebrow}</span>
-      </nav>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h1>{title}</h1>
-      <p className="lead">{children}</p>
-    </section>
-  );
-}
 export function CTA() {
   return (
     <section className="cta dark">

@@ -12,6 +12,7 @@ import {
   type PhotoKey,
 } from "@/content/site";
 import { donationPage } from "@/content/donate";
+import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
 
 export type SiteSettings = typeof site;
 export type NavigationItem = (typeof navigation)[number];
@@ -23,8 +24,13 @@ export type DonationPage = typeof donationPage;
 
 export type PublicRoute = {
   path: string;
-  changeFrequency: "weekly" | "monthly" | "yearly";
-  priority: number;
+  /** Title used for breadcrumbs and llms.txt. */
+  title: string;
+  /**
+   * When the page's main content last changed, if genuinely known. Left undefined rather
+   * than guessed: a false `lastmod` misleads crawlers (see docs/SEO.md).
+   */
+  lastModified?: string;
 };
 
 export interface ContentRepository {
@@ -37,24 +43,30 @@ export interface ContentRepository {
   getPublicRoutes(): Promise<readonly PublicRoute[]>;
 }
 
+// Every canonical, indexable public page. Not listed: /api/*, metadata routes,
+// query-string variants such as /contact?topic=… and anything unpublished.
 const staticRoutes: readonly PublicRoute[] = [
-  "/",
-  "/about",
-  "/programmes",
-  "/projects",
-  "/projects/community-lion-conservation",
-  "/get-involved",
-  "/donate",
-  "/contact",
-  "/privacy",
-  "/terms",
-  "/accessibility",
-  "/credits",
-].map((path) => ({
-  path,
-  changeFrequency: "monthly",
-  priority: path === "/" ? 1 : 0.7,
-}));
+  { path: "/", title: "Home" },
+  { path: "/about", title: "About" },
+  { path: "/programmes", title: "Programmes" },
+  { path: "/projects", title: "Projects" },
+  {
+    path: "/projects/community-lion-conservation",
+    title: "Community Lion Conservation",
+  },
+  { path: "/get-involved", title: "Get involved" },
+  { path: "/donate", title: "Donate" },
+  { path: "/contact", title: "Contact" },
+  {
+    path: "/privacy",
+    title: "Privacy notice",
+    // The notice version starts with the date its text last changed.
+    lastModified: PRIVACY_NOTICE_VERSION.slice(0, 10),
+  },
+  { path: "/terms", title: "Website terms" },
+  { path: "/accessibility", title: "Accessibility" },
+  { path: "/credits", title: "Image credits" },
+];
 
 export const staticContentRepository: ContentRepository = {
   getSiteSettings: async () => site,

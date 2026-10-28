@@ -1,18 +1,23 @@
 import Image from "next/image";
 import { photos, type PhotoKey } from "@/content/site";
 import { Button, Eyebrow } from "@/components/ui/primitives";
+import { Breadcrumbs } from "@/components/seo/structured-data";
+import type { Crumb } from "@/lib/seo";
 export function Hero({
   title,
   description,
   photo = "hero",
   eyebrow = "Rooted in Kigezi. Working for tomorrow.",
   project = false,
+  trail,
 }: {
   title: string;
   description: string;
   photo?: PhotoKey;
   eyebrow?: string;
   project?: boolean;
+  /** Breadcrumbs after Home, for heroes on inner pages. */
+  trail?: readonly Crumb[];
 }) {
   const p = photos[photo];
   return (
@@ -33,6 +38,9 @@ export function Hero({
       </div>
       <div className="hero-shade" />
       <div className="container hero-content">
+        {trail && (
+          <Breadcrumbs trail={trail} className="breadcrumbs hero-breadcrumbs" />
+        )}
         <Eyebrow>{eyebrow}</Eyebrow>
         <h1 id="hero-title">
           {title.split("|").map((line, i) => (

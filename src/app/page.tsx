@@ -16,8 +16,8 @@ import { homeDonation } from "@/content/donate";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
-    "People. Nature. A shared future.",
-    "A community-led foundation in Rukungiri, Uganda, connecting wildlife conservation, environmental stewardship, climate resilience and human rights.",
+    { absolute: "Kigezi Community Transformation Foundation (KCTF) | Uganda" },
+    "KCTF is a community-led foundation in Rukungiri, Uganda, at its planning stage, connecting wildlife conservation, environment, climate and human rights.",
     "/",
   );
 export default function Home() {

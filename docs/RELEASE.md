@@ -1,5 +1,17 @@
 # Release notes and launch steps
 
+## 28 October 2026: SEO branch `feature/seo-discoverability`
+
+Branched from `feature/donations-page`. Adds complete per-page metadata (canonical, Open Graph, X/Twitter, image alt text), unique titles and descriptions, `Organization`/`WebSite`/`BreadcrumbList`/`FAQPage` JSON-LD, visible breadcrumbs (including on the lion project hero), a "KCTF at a glance" section on `/about`, a sitemap with honest `lastmod`, an optional AI-training opt-out (`SITE_AI_TRAINING`), optional search-console verification tokens, an experimental `/llms.txt`, `noindex` on `/api/*`, a Vercel-preview indexing guard, a more helpful 404 page, header-logo and AVIF image optimisation, and a click-to-load Google map on `/contact`. The privacy notice gains an "Optional Google map" section, and `PRIVACY_NOTICE_VERSION` is now `2026-10-28`. No database migration. Details are in `docs/SEO.md`.
+
+Decisions for the foundation:
+
+1. Whether to opt out of AI-training crawlers (`SITE_AI_TRAINING`).
+2. Whether to show an embedded map at all. If so, create a restricted Maps Embed API key (`GOOGLE_MAPS_EMBED_API_KEY`).
+3. Confirm the exact office location, if one should be shown, before marking the pin as verified.
+4. Approve the updated privacy notice text.
+5. Who will own Google Search Console and Bing Webmaster Tools, and whether KCTF is eligible for a Google Business Profile.
+
 ## 27 October 2026: donations branch `feature/donations-page`
 
 Adds `/donate` (enquiry-only), Donate CTAs in the header, mobile menu, homepage and footer, a `donation` enquiry topic (migration `20261027130000_donation_enquiry_topic`), donation-specific notification and confirmation wording, privacy-notice version `2026-10-27b`, and `docs/DONATIONS.md`. **No payments are taken.** Apply the migration with `npm run db:deploy` before deploying code that offers the topic in online mode.

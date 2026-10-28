@@ -12,13 +12,34 @@ export const siteEnvironments = [
 ] as const;
 export type SiteEnvironment = (typeof siteEnvironments)[number];
 
+export type AiTrainingPolicy = "allow" | "disallow";
+
 export type SiteConfig = {
   environment: SiteEnvironment;
   origin: string;
   /** True only for a validated production deployment that explicitly opts in. */
   indexable: boolean;
+  /** Whether robots.txt opts out of crawlers used only for AI model training. */
+  aiTraining: AiTrainingPolicy;
+  /** Public search-console ownership tokens, rendered as meta tags when indexable. */
+  verification: { google?: string; bing?: string };
   warnings: string[];
 };
+
+/**
+ * Robots.txt product tokens used to collect content for training AI models, as
+ * documented by each operator. Search and user-initiated fetchers (Googlebot, Bingbot,
+ * OAI-SearchBot, ChatGPT-User, PerplexityBot, Claude-SearchBot) are deliberately not
+ * listed: blocking them would remove the site from those search products.
+ * See docs/SEO.md for sources.
+ */
+export const aiTrainingCrawlers = [
+  "GPTBot",
+  "Google-Extended",
+  "ClaudeBot",
+  "Applebot-Extended",
+  "CCBot",
+] as const;
 
 const LOCAL_ORIGIN = "http://localhost:3000";
 
@@ -83,6 +104,19 @@ function parseNonProductionOrigin(value: string): string {
   return url.origin;
 }
 
+/** Verification tokens are public but must be a single plain token, never markup. */
+function readVerificationToken(
+  name: string,
+  value: string | undefined,
+): string | undefined {
+  if (!value) return undefined;
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(value))
+    throw new Error(
+      `${name} must be the bare token from the verification meta tag (letters, digits, - or _).`,
+    );
+  return value;
+}
+
 export function readSiteConfig(
   env: Record<string, string | undefined> = process.env,
 ): SiteConfig {
@@ -96,11 +130,38 @@ export function readSiteConfig(
   const indexing = env.SITE_INDEXING || "noindex";
   if (indexing !== "index" && indexing !== "noindex")
     throw new Error("SITE_INDEXING must be `index` or `noindex`.");
+  const aiTraining = env.SITE_AI_TRAINING || "allow";
+  if (aiTraining !== "allow" && aiTraining !== "disallow")
+    throw new Error("SITE_AI_TRAINING must be `allow` or `disallow`.");
+  const verification = {
+    google: readVerificationToken(
+      "GOOGLE_SITE_VERIFICATION",
+      env.GOOGLE_SITE_VERIFICATION,
+    ),
+    bing: readVerificationToken(
+      "BING_SITE_VERIFICATION",
+      env.BING_SITE_VERIFICATION,
+    ),
+  };
+  const shared = { aiTraining, verification } as const;
 
   if (environment === "production") {
     // Fail the build rather than publish canonical URLs for the wrong origin.
     const origin = parsePublicOrigin(env.SITE_URL);
-    return { environment, origin, indexable: indexing === "index", warnings };
+    // Defence in depth: a Vercel preview that inherits production settings by mistake
+    // still stays out of search indexes.
+    const vercelPreview = !!env.VERCEL_ENV && env.VERCEL_ENV !== "production";
+    if (vercelPreview && indexing === "index")
+      warnings.push(
+        `SITE_INDEXING=index is ignored on a Vercel ${env.VERCEL_ENV} deployment.`,
+      );
+    return {
+      environment,
+      origin,
+      indexable: indexing === "index" && !vercelPreview,
+      ...shared,
+      warnings,
+    };
   }
   if (indexing === "index")
     warnings.push(
@@ -114,5 +175,5 @@ export function readSiteConfig(
       throw new Error(`Invalid SITE_URL: ${(error as Error).message}`);
     }
   }
-  return { environment, origin, indexable: false, warnings };
+  return { environment, origin, indexable: false, ...shared, warnings };
 }

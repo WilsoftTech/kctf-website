@@ -3,6 +3,7 @@
 import "server-only";
 import { z } from "zod";
 import { readSiteConfig, type SiteEnvironment } from "@/lib/site-config";
+import { isMapsEmbedKey } from "@/lib/maps";
 import { log } from "@/server/log";
 
 type Env = Record<string, string | undefined>;
@@ -259,4 +260,21 @@ export function enquiryConfig(env: Env = process.env): EnquiryConfigResult {
 export function readWorkerSecret(env: Env = process.env): string | undefined {
   const secret = env.CRON_SECRET;
   return secret && secret.length >= 32 ? secret : undefined;
+}
+
+/**
+ * Maps Embed API key for the optional map on /contact. Browser-visible by design, so it
+ * must be restricted to the Maps Embed API and the site's HTTP referrers. Undefined (no
+ * embedded map; the Google Maps link remains) when unset or malformed.
+ */
+let reportedMapsKey = false;
+export function readMapsEmbedKey(env: Env = process.env): string | undefined {
+  const key = env.GOOGLE_MAPS_EMBED_API_KEY;
+  if (!key) return undefined;
+  if (isMapsEmbedKey(key)) return key;
+  if (!reportedMapsKey) {
+    reportedMapsKey = true;
+    log("warn", "maps_embed_key_invalid");
+  }
+  return undefined;
 }

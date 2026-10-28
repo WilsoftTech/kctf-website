@@ -1,11 +1,12 @@
-import { PageHeader, Photo, CTA, Eyebrow } from "@/components/ui/primitives";
+import { Photo, CTA, Eyebrow } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { content } from "@/content/repository";
 import { metadata } from "@/lib/seo";
 import Link from "next/link";
 export const generateMetadata = () =>
   metadata(
-    "Our programmes",
-    "Explore KCTF’s four intended focus areas: wildlife conservation, environmental protection, climate action, and justice and human rights.",
+    "Programmes: conservation, climate and human rights",
+    "KCTF’s four intended focus areas in Rukungiri, Uganda: wildlife conservation, environmental protection, climate action, and justice and human rights.",
     "/programmes",
   );
 export default async function Programmes() {
@@ -15,6 +16,7 @@ export default async function Programmes() {
       <PageHeader
         eyebrow="Our programmes"
         title="Connected challenges. Shared possibilities."
+        trail={[{ name: "Programmes", path: "/programmes" }]}
       >
         Four areas of focus, united by a belief that thriving communities and a
         healthy natural world belong together.

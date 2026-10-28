@@ -1,21 +1,20 @@
-import {
-  PageHeader,
-  Photo,
-  Button,
-  CTA,
-  Eyebrow,
-} from "@/components/ui/primitives";
+import { Photo, Button, CTA, Eyebrow } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
-    "Projects",
-    "Discover the proposed Community Lion Conservation initiative and KCTF’s approach to community-led conservation.",
+    "Projects and proposed initiatives",
+    "KCTF’s projects, starting with the proposed Community Lion Conservation initiative in Rukungiri District. Planning stage; no outcomes are claimed.",
     "/projects",
   );
 export default function Projects() {
   return (
     <>
-      <PageHeader eyebrow="Our projects" title="Ideas with a place to begin.">
+      <PageHeader
+        eyebrow="Our projects"
+        title="Ideas with a place to begin."
+        trail={[{ name: "Projects", path: "/projects" }]}
+      >
         Thoughtful, community-led proposals for a future where people and nature
         thrive together.
       </PageHeader>

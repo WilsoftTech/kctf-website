@@ -49,4 +49,6 @@ To answer an access or deletion request, staff find the enquiry by reference or 
 
 ## Donation enquiries
 
+Since notice version `2026-10-28`, the notice also describes the optional, click-to-load Google map on `/contact`: nothing is requested from Google until the visitor chooses to load it, Google then receives the IP address and referrer origin and may set cookies, and the foundation receives none of it. The map does not change what the foundation stores.
+
 Since notice version `2026-10-27b`, the notice states that donation enquiries are handled like other enquiries, that the website never asks for card, bank or mobile-money details, and that Turnstile also runs on `/donate`. Donation enquiries share the enquiry table and the single retention period. No payment or financial records are stored. If online payments are added later, financial-record retention needs its own decision (see `docs/DONATIONS.md`).

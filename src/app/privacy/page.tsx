@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { site } from "@/content/site";
 import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
 import { enquiryConfig, readRetentionConfig } from "@/server/config";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const generateMetadata = () =>
   metadata(
     "Privacy notice",
-    "How KCTF’s website handles enquiries, stored records, email delivery, spam protection and your privacy choices.",
+    "How the KCTF website handles enquiries, stored records, email delivery, spam protection, the optional Google map and your privacy choices.",
     "/privacy",
   );
 export default function Privacy() {
@@ -20,6 +20,7 @@ export default function Privacy() {
       <PageHeader
         eyebrow="Privacy"
         title="Your information. Handled with care."
+        trail={[{ name: "Privacy notice", path: "/privacy" }]}
       >
         How this website handles your visit and enquiries.
       </PageHeader>
@@ -132,7 +133,26 @@ export default function Privacy() {
           The website uses locally hosted fonts and photographs and does not
           install advertising or analytics trackers. When online enquiries are
           active, Cloudflare Turnstile runs on the contact and donate pages
-          under its own privacy terms.
+          under its own privacy terms. Google may set cookies if you choose to
+          load the optional map described below.
+        </p>
+        <h2 id="map">Optional Google map</h2>
+        <p>
+          The contact page can show a Google map of the foundation’s area. It is
+          not loaded automatically: nothing is requested from Google until you
+          select “Load Google map”. When you do, your browser connects directly
+          to Google, which receives your IP address, the page you came from (the
+          website address only) and technical information about your device, and
+          may set or read cookies. Google handles this under its own privacy
+          policy, and the foundation does not receive or store it. The map shows
+          an approximate area found by searching for the address, not a
+          confirmed office location.
+        </p>
+        <p>
+          You do not need the map to contact the foundation. The written
+          address, email and telephone details remain on the contact page, and
+          the “Open in Google Maps” and “Get directions” links take you to
+          Google only if you follow them.
         </p>
         <h2>External links</h2>
         <p>

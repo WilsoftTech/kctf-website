@@ -33,11 +33,12 @@ scripts/
   outbox.ts                Outbox CLI: run, status, failed, requeue
   retention.ts             Dry-run-first retention cleanup
   db-deploy.ts             Guarded `prisma migrate deploy`
+  measure-vitals.ts        Lab LCP/CLS/transfer measurement against a running build
 src/
-  app/                     Pages, metadata routes, /api/enquiries, /api/outbox/run
-  components/              Layout (header, mega menu, mobile dialog, footer), motion, sections, UI
+  app/                     Pages, metadata routes (robots, sitemap, OG image, llms.txt), /api/enquiries, /api/outbox/run
+  components/              Layout (header, mega menu, mobile dialog, footer, page header), motion, sections (incl. contact map), SEO (JSON-LD, breadcrumbs), UI
   content/                 Static content, privacy notice version, content repository boundary
-  lib/                     Site origin/indexing config, SEO helpers, API response contract
+  lib/                     Site origin/indexing config, SEO and structured-data helpers, Maps URLs, API response contract
   server/                  Config validation, Prisma client, enquiry pipeline, outbox, retention, logging
   validation/              Shared Zod enquiry schema
   generated/prisma/        Generated Prisma client (git-ignored; built on install)
@@ -45,7 +46,7 @@ tests/
   unit/                    No database or network
   integration/             Real PostgreSQL (disposable)
   e2e/                     Playwright: production build, desktop + mobile, axe scans
-docs/                      Database, operations, deployment, privacy/retention, CMS roadmap, verification, release
+docs/                      Database, operations, deployment, SEO, privacy/retention, CMS roadmap, verification, release
 vercel.json                Daily outbox cron
 ```
 
@@ -68,7 +69,8 @@ To work on online enquiries locally, create a Neon **development** branch and fi
 Every variable is listed, grouped and commented in `.env.example`; `docs/DEPLOYMENT.md` has the full table of what is required where and whether it is read at **build** or **runtime**. In short:
 
 - **Build and runtime (must match):** `SITE_ENVIRONMENT`, `SITE_URL`, `SITE_INDEXING`. A production build fails if `SITE_URL` is not a public `https` origin. Only `SITE_ENVIRONMENT=production` with `SITE_INDEXING=index` is indexable; staging, preview and unconfigured builds are `noindex`, with robots, sitemap, meta tags, `X-Robots-Tag` and canonical/JSON-LD URLs all agreeing.
-- **Runtime:** database, Resend, Turnstile (both keys; the site key is passed to the form by the server, not inlined), abuse secret, proxy trust, cron secret, retention.
+- **Build, optional:** `SITE_AI_TRAINING` (opt out of AI-training crawlers), `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION` (public tokens, rendered only when indexable).
+- **Runtime:** database, Resend, Turnstile (both keys; the site key is passed to the form by the server, not inlined), abuse secret, proxy trust, cron secret, retention, and the optional public `GOOGLE_MAPS_EMBED_API_KEY` for the contact map.
 - **CLI only:** `DIRECT_URL`, `SHADOW_DATABASE_URL`.
 
 ## Neon and migrations
@@ -92,6 +94,17 @@ See `docs/OPERATIONS.md`. Summary:
 ## Donations
 
 See `docs/DONATIONS.md`. **Donations are enquiry-only: the website does not take payments**, because no payment provider or approved receiving details exist. `/donate` explains the proposed areas that support could help fund, partnership and institutional support, and an FAQ, and it embeds the enquiry form with the `donation` topic. Donation enquiries are stored in Neon and notified through the outbox exactly like other enquiries (or open an email draft in email-draft mode), and they never claim a payment. "Donate" calls to action are in the desktop and tablet header, the mobile menu, a homepage section and the footer; all link to `/donate`. `docs/DONATIONS.md` lists what is required before online payments can be activated.
+
+## Search, structured data and the contact map
+
+See `docs/SEO.md`. Summary:
+
+- **Metadata:** every page sets a unique title and description, a canonical URL on `SITE_URL`, and complete Open Graph and X/Twitter data through `metadata()` in `src/lib/seo.ts`. Next merges metadata shallowly, so pages must not set partial `openGraph` objects.
+- **Structured data:** one `Organization` and one `WebSite` (stable `@id`s) on every page, `BreadcrumbList` matching the visible breadcrumbs, and `FAQPage` on `/about` and `/donate` for visible questions only. No registration, tax status, coordinates, hours, ratings or social profiles are claimed.
+- **Sitemap and robots:** generated from `content.getPublicRoutes()`. `lastmod` appears only where a real date is known (the privacy notice). Non-production deployments are fully `noindex` with an empty sitemap.
+- **AI search:** search and answer-engine crawlers are allowed. Training crawlers are allowed unless `SITE_AI_TRAINING=disallow`. `/llms.txt` is an experimental, non-standard summary with canonical links. No ranking, indexing or AI-citation outcome is promised.
+- **Contact map:** click-to-load Maps Embed API iframe showing an **approximate** address search (no exact office pin is confirmed), with the written address and keyless Google Maps search and directions links always available. CSP allows only the embed path.
+- **Owner actions** (Search Console, Bing Webmaster Tools, Business Profile eligibility, optional IndexNow) are listed in `docs/SEO.md` §8.
 
 ## Outbox processing and recovery
 
@@ -120,9 +133,10 @@ npm run test:integration    # disposable embedded PostgreSQL (or TEST_DATABASE_U
 npx playwright install chromium   # once
 npm run test:e2e            # rebuilds .next with test settings, then desktop + mobile browser tests and axe scans
 npm run build               # rebuild with your own settings afterwards
+npx tsx scripts/measure-vitals.ts http://localhost:3000   # optional: lab performance check against `npm start`
 ```
 
-No test contacts Neon, Resend or Cloudflare, and no real email is sent. Results of the latest run are in `docs/VERIFICATION.md`.
+No test contacts Neon, Resend, Cloudflare or Google, and no real email is sent. Results of the latest run are in `docs/VERIFICATION.md`.
 
 ## Production release
 
@@ -143,6 +157,8 @@ The design source reference is **WilsoftTech/Each-herbarium** at commit `d590ed9
 - Per-IP limits only apply on Vercel (`TRUSTED_PROXY=vercel`).
 - No staff UI for enquiries; access and deletion requests are handled by an administrator (see `docs/PRIVACY-RETENTION.md`).
 - Accessibility is checked with automated axe scans and keyboard tests, not a full manual or screen-reader audit.
+- The contact map is an approximate address search until the foundation confirms an exact office pin. The real Google embed has not been loaded: tests intercept Google requests, and no key exists yet.
+- Search visibility is unverified: nothing has been submitted to Google or Bing, and the site is not deployed. Performance figures are local lab measurements, not field data.
 
 ## Future CMS
 

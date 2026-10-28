@@ -1,16 +1,12 @@
-import {
-  PageHeader,
-  Photo,
-  Heading,
-  CTA,
-  Eyebrow,
-} from "@/components/ui/primitives";
-import { site } from "@/content/site";
-import { metadata } from "@/lib/seo";
+import { Photo, Heading, CTA, Eyebrow } from "@/components/ui/primitives";
+import { aboutQuestions, site } from "@/content/site";
+import { PageHeader } from "@/components/layout/page-header";
+import { JsonLd } from "@/components/seo/structured-data";
+import { faqPage, metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
-    "About the foundation",
-    "Meet KCTF, a community-led foundation taking shape in Rukungiri, Uganda. Explore our mission, vision and proposed governance.",
+    "About Kigezi Community Transformation Foundation",
+    "Who KCTF is: a community-led foundation at its planning stage in Rukungiri, Uganda. Mission, vision, founder, location and registration status.",
     "/about",
   );
 export default function About() {
@@ -19,6 +15,7 @@ export default function About() {
       <PageHeader
         eyebrow="About the foundation"
         title="Rooted here. Looking forward."
+        trail={[{ name: "About", path: "/about" }]}
       >
         A shared commitment to the communities and natural landscapes of Kigezi.
       </PageHeader>
@@ -134,6 +131,29 @@ export default function About() {
             ))}
           </div>
         </div>
+      </section>
+      <section className="section" aria-labelledby="about-questions">
+        <div className="container faq-grid">
+          <Heading
+            id="about-questions"
+            eyebrow="Questions"
+            title="KCTF at a glance."
+          >
+            Short answers to the questions people ask most often.
+          </Heading>
+          <div className="faq">
+            {aboutQuestions.map(([q, a]) => (
+              <details key={q}>
+                <summary>
+                  <h3>{q}</h3>
+                  <span className="faq-icon" aria-hidden="true" />
+                </summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+        <JsonLd graph={faqPage("/about", aboutQuestions)} />
       </section>
       <CTA />
     </>

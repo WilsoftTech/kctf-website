@@ -4,8 +4,8 @@ import { projectStages, targets } from "@/content/site";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
-    "Community Lion Conservation",
-    "A proposed 12-month community-led initiative for conservation education, dialogue and safe wildlife incident reporting in Rukungiri District.",
+    "Community Lion Conservation (proposed initiative)",
+    "A proposed 12-month community initiative for conservation education, dialogue and safe wildlife incident reporting in Rukungiri District, Uganda.",
     "/projects/community-lion-conservation",
   );
 export default function Project() {
@@ -17,6 +17,13 @@ export default function Project() {
         description="A proposed community-led initiative for understanding, safer responses and peaceful coexistence."
         eyebrow="Community Lion Conservation / Proposed initiative"
         project
+        trail={[
+          { name: "Projects", path: "/projects" },
+          {
+            name: "Community Lion Conservation",
+            path: "/projects/community-lion-conservation",
+          },
+        ]}
       />
       <section className="section" id="project-overview">
         <div className="container split">

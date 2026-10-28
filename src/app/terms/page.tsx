@@ -1,16 +1,20 @@
-import { PageHeader } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { site } from "@/content/site";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
     "Website terms",
-    "Information about KCTF’s website, proposed initiatives, content and responsible use.",
+    "Terms for using the KCTF website: the status of the foundation and its proposed initiatives, enquiries, photographs and responsible use.",
     "/terms",
   );
 export default function Terms() {
   return (
     <>
-      <PageHeader eyebrow="Website terms" title="Clarity builds trust.">
+      <PageHeader
+        eyebrow="Website terms"
+        title="Clarity builds trust."
+        trail={[{ name: "Website terms", path: "/terms" }]}
+      >
         Please read these notes when using the foundation’s website.
       </PageHeader>
       <article className="container legal">

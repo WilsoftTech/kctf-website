@@ -1,5 +1,30 @@
 # Verification report
 
+## SEO branch: 28 October 2026
+
+Branch `feature/seo-discoverability` (from `feature/donations-page`), verified locally on Windows 11 with Node.js 24.22.1. Nothing was deployed, merged, submitted to a search engine or sent to Google: browser tests intercept every Google Maps request.
+
+| Check                                     | Command                                                                                                              | Result                                                                                                                                                     |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prettier                                  | `npm run format:check`                                                                                               | Passed                                                                                                                                                     |
+| TypeScript                                | `npm run typecheck`                                                                                                  | Passed                                                                                                                                                     |
+| ESLint                                    | `npm run lint`                                                                                                       | Passed                                                                                                                                                     |
+| Unit tests                                | `npm test`                                                                                                           | 152 passed (6 files)                                                                                                                                       |
+| Database integration tests                | `npm run test:integration`                                                                                           | 35 passed (4 files)                                                                                                                                        |
+| Browser tests (desktop 1440×900, Pixel 7) | `npm run test:e2e`                                                                                                   | 84 passed, 28 skipped (viewport-specific or markup-identical on mobile)                                                                                    |
+| Production build (default settings)       | `npm run build`                                                                                                      | Passed; `/llms.txt` static, `/contact`, `/donate` and `/privacy` dynamic                                                                                   |
+| Production-mode output (local only)       | build with `SITE_ENVIRONMENT=production SITE_URL=https://kctf.example SITE_INDEXING=index SITE_AI_TRAINING=disallow` | robots, sitemap (12 HTTPS URLs, `lastmod` only on `/privacy`), `llms.txt`, canonical, verification tag and headers inspected; no `localhost` in built HTML |
+
+New coverage:
+
+- **Unit:** unique titles (65 characters or fewer) and descriptions (70–160 characters) on every sitemap route; canonical, Open Graph (site name, locale, image alt) and X card per page; the route list matches the sitemap; HTTPS-only sitemap URLs with no guessed `lastmod`; staging, preview and Vercel-preview `noindex` with an empty sitemap and a 404 `llms.txt`; AI-training opt-out leaves search crawlers allowed; verification tokens validated and only rendered when indexable; `Organization` contains no unverified properties; breadcrumb positions and URLs; JSON-LD escaping; Maps URL encoding and embed-key validation.
+- **Browser:** each public page has one `h1`, server-rendered content and parseable JSON-LD with exactly one `Organization` and one `WebSite`, unique `@id`s, and breadcrumbs whose last item equals the canonical URL and matches the visible trail. FAQ markup equals the visible questions and answers on `/about` and `/donate`. Unknown URLs return 404 with `noindex`. `/api/*` carries `X-Robots-Tag`. The map makes no Google request before the click, loads from the keyboard, has a titled lazy iframe, is permitted by CSP, and keeps its box size (no layout shift). A map that never loads shows guidance while the email link and enquiry form still work. CSP blocks a non-embed Google Maps frame and keeps `frame-ancestors 'none'` and `X-Frame-Options: DENY`. axe scans of all previous routes, including `/contact` with the map section, found no violations.
+- **Performance (lab):** measured before and after with `scripts/measure-vitals.ts`; results and caveats are in `docs/SEO.md` §6.
+
+Not verified: the real Google Maps embed (no key exists), search-console verification and indexing, social-preview rendering on real platforms, field Core Web Vitals, screen readers and physical devices.
+
+---
+
 ## Donations branch: 27 October 2026
 
 Branch `feature/donations-page` (from `production-readiness-neon-outbox`), verified locally on Windows 11. No test contacted Neon, Resend or Cloudflare, no real email was sent, and no payment was initiated. Nothing was deployed or merged.

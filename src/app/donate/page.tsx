@@ -1,16 +1,12 @@
 import Link from "next/link";
-import {
-  Arrow,
-  Button,
-  Heading,
-  PageHeader,
-  Photo,
-} from "@/components/ui/primitives";
+import { Arrow, Button, Heading, Photo } from "@/components/ui/primitives";
 import { EnquiryForm } from "@/components/sections/enquiry-form";
 import { content } from "@/content/repository";
 import { site } from "@/content/site";
 import { enquiryConfig } from "@/server/config";
-import { metadata } from "@/lib/seo";
+import { PageHeader } from "@/components/layout/page-header";
+import { JsonLd } from "@/components/seo/structured-data";
+import { faqPage, metadata } from "@/lib/seo";
 // Online payments are not available: this page offers donation enquiries through the
 // shared enquiry pipeline. It renders per request because the form mode is runtime config.
 export const dynamic = "force-dynamic";
@@ -23,7 +19,11 @@ export default async function Donate() {
   const enquiries = enquiryConfig();
   return (
     <>
-      <PageHeader eyebrow={page.eyebrow} title={page.title}>
+      <PageHeader
+        eyebrow={page.eyebrow}
+        title={page.title}
+        trail={[{ name: "Donate", path: "/donate" }]}
+      >
         {page.lead}
       </PageHeader>
       <section className="section-sm">
@@ -152,6 +152,7 @@ export default async function Donate() {
             ))}
           </div>
         </div>
+        <JsonLd graph={faqPage("/donate", page.faq.items)} />
         <p className="container small muted photo-note">
           {page.photoNote} See the{" "}
           <Link className="inline-link" href="/credits">

@@ -1,15 +1,10 @@
-import {
-  PageHeader,
-  Heading,
-  Button,
-  Photo,
-  Eyebrow,
-} from "@/components/ui/primitives";
+import { Heading, Button, Photo, Eyebrow } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
-    "Get involved",
-    "Express an interest in future volunteer opportunities or start a partnership conversation with KCTF in Rukungiri.",
+    "Get involved: volunteering and partnerships",
+    "Ways to help KCTF in Rukungiri, Uganda: express interest in future volunteering, start a partnership conversation or ask about supporting its work.",
     "/get-involved",
   );
 export default function Involved() {
@@ -18,6 +13,7 @@ export default function Involved() {
       <PageHeader
         eyebrow="Get involved"
         title="A shared future needs all of us."
+        trail={[{ name: "Get involved", path: "/get-involved" }]}
       >
         Your knowledge, time and perspective can help shape what comes next.
       </PageHeader>

@@ -1,10 +1,10 @@
-import { PageHeader } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/layout/page-header";
 import { photos } from "@/content/site";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
     "Image credits",
-    "Photography sources, creators and reuse licences for the KCTF website.",
+    "Photographers, sources and Creative Commons licences for the western Uganda images used on the KCTF website, plus typography and logo credits.",
     "/credits",
   );
 export default function Credits() {
@@ -13,7 +13,11 @@ export default function Credits() {
   );
   return (
     <>
-      <PageHeader eyebrow="Image credits" title="Seen through their eyes.">
+      <PageHeader
+        eyebrow="Image credits"
+        title="Seen through their eyes."
+        trail={[{ name: "Image credits", path: "/credits" }]}
+      >
         With acknowledgement to the photographers whose work illustrates western
         Uganda’s landscapes, wildlife and cultural heritage.
       </PageHeader>

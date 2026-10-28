@@ -87,7 +87,9 @@ export function SiteHeader() {
               alt="Kigezi Community Transformation Foundation"
               width={1774}
               height={887}
-              priority
+              // Rendered at most 124px wide; without `sizes` 2x screens fetched 3840px.
+              sizes="124px"
+              loading="eager"
             />
           </Link>
           <nav
