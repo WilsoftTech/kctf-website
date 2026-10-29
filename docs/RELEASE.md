@@ -1,5 +1,13 @@
 # Release notes and launch steps
 
+## 29 October 2026: feature stack integrated into `main`
+
+The user authorised merging the database, payments, SEO and carousel changes into `main`. The branches form a linear stack, so fast-forwarding `main` to `feat/homepage-hero-carousel` includes the complete history of `production-readiness-neon-outbox`, `feature/donations-page`, `feature/seo-discoverability` and `feature/donation-payments`, plus the carousel and its follow-up tests. Feature branches are retained.
+
+The combined implementation at `f11fcfe` passed [GitHub CI run 40839851204](https://github.com/WilsoftTech/kctf-website/actions/runs/40839851204): TypeScript, ESLint, formatting, 238 unit tests, 77 database integration tests, 128 browser tests (32 intentional skips), and production build. The later `77df238` commit only records those results. The integration adds deployment configuration and documentation; application code is unchanged from the tested stack.
+
+**This is a source merge, not a deployment.** `vercel.json` disables automatic deployment for `main` and the carousel branch, preserving the earlier no-deployment instruction. Database migrations are included as source files; none are applied to an application database by merging. Existing release decisions and configuration requirements below still apply before publishing or enabling online services.
+
 ## 28 October 2026: donation-payments branch `feature/donation-payments`
 
 Branched from `feature/seo-discoverability`. Its first commit is the pre-existing, uncommitted "save email-draft enquiry copies" work, committed unchanged. Adds online giving at `/donate/give` (Stripe Checkout for cards, Pesapal hosted checkout for MTN MoMo/Airtel Money) with a server-confirmed status page, webhook and IPN handling, reconciliation, donation emails through the outbox, migration `20261028180000_donation_payments`, privacy notice `2026-10-28c`, shared form components (the contact and donation-enquiry forms were restyled with them), and tests with local provider doubles. **Payments are off by default; nothing has been charged.** Details: `docs/DONATIONS.md`.

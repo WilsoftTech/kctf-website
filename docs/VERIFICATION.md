@@ -8,7 +8,7 @@ The new autoplay checks also passed in [CI run 40838701756](https://github.com/W
 
 The final [GitHub CI run 40839851204](https://github.com/WilsoftTech/kctf-website/actions/runs/40839851204), commit `f11fcfe`, passed all checks: TypeScript, ESLint, formatting, 238 unit tests, 77 integration tests, **128 browser tests passed with 32 intentional skips**, and the final production build. Both real-time initial-visit/reload autoplay tests passed again.
 
-Branch: `feat/homepage-hero-carousel`, based on local `1dcc5d9` (the fetched `origin/main` is already an ancestor). Existing photographs elsewhere are unchanged. No merge or deployment is authorised; Vercel automatic deployment is disabled for this branch in `vercel.json`.
+Branch: `feat/homepage-hero-carousel`, based on local `1dcc5d9` (the fetched `origin/main` was already an ancestor). Existing photographs elsewhere are unchanged. The user subsequently authorised integration of the full feature stack into `main` on 29 October 2026; see [RELEASE.md](RELEASE.md). Deployment remains unauthorised, with automatic Vercel deployment disabled for both `main` and the carousel branch.
 
 Completed locally on Windows with Node.js 24:
 

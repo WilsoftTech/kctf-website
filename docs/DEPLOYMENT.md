@@ -1,5 +1,7 @@
 # Configuration and deployment
 
+Source integration, 29 October 2026: the feature stack has been merged into `main` by user request. Automatic Vercel deployment is disabled for `main` and `feat/homepage-hero-carousel` in `vercel.json` to preserve the no-deployment instruction. Re-enable the intended branch only as part of a separately authorised deployment. Merging does not apply database migrations or enable payment providers.
+
 Added 27 October 2026. Intended host: **Vercel** (Node.js runtime). Any Node host that runs `next start` also works, with `TRUSTED_PROXY=none` and an external scheduler for the outbox.
 
 ## Environment variables
