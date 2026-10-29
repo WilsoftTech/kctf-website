@@ -6,6 +6,8 @@ Autoplay follow-up, 29 October 2026: added a real-time browser regression check 
 
 The new autoplay checks also passed in [CI run 40838701756](https://github.com/WilsoftTech/kctf-website/actions/runs/40838701756), but that full run failed an existing contact-map CSP assertion (127 passed, 1 failed, 32 skipped). The assertion accepted an unrelated `script-src eval` event before the expected `frame-src` event. The test now filters for frame-policy violations, removes its listener/iframe, and deliberately injects an unrelated script event to cover the race. The targeted production-build desktop/mobile rerun (`npm run test:e2e -- seo.spec.ts --grep "CSP still blocks"`) passed both tests. The application CSP is unchanged.
 
+The final [GitHub CI run 40839851204](https://github.com/WilsoftTech/kctf-website/actions/runs/40839851204), commit `f11fcfe`, passed all checks: TypeScript, ESLint, formatting, 238 unit tests, 77 integration tests, **128 browser tests passed with 32 intentional skips**, and the final production build. Both real-time initial-visit/reload autoplay tests passed again.
+
 Branch: `feat/homepage-hero-carousel`, based on local `1dcc5d9` (the fetched `origin/main` is already an ancestor). Existing photographs elsewhere are unchanged. No merge or deployment is authorised; Vercel automatic deployment is disabled for this branch in `vercel.json`.
 
 Completed locally on Windows with Node.js 24:
