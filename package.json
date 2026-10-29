@@ -25,7 +25,8 @@
     "db:seed": "tsx --conditions=react-server scripts/seed.ts",
     "outbox": "tsx --conditions=react-server scripts/outbox.ts",
     "retention": "tsx --conditions=react-server scripts/retention.ts",
-    "payments": "tsx --conditions=react-server scripts/payments.ts"
+    "payments": "tsx --conditions=react-server scripts/payments.ts",
+    "worker": "tsx --conditions=react-server scripts/worker.ts"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.0",
@@ -62,5 +63,10 @@
     "typescript": "^5.9.0",
     "vitest": "^4.0.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "4.6.7"
+    }
+  }
 }

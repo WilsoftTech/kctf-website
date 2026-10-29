@@ -14,14 +14,19 @@ export function createDb(connectionString: string): Database {
     connectionString,
     // Small per-instance pool: Neon's PgBouncer pooler multiplexes across instances.
     max: 5,
-    connectionTimeoutMillis: 5_000,
+    connectionTimeoutMillis: 3_000,
+    query_timeout: 3_000,
+    statement_timeout: 3_000,
     idleTimeoutMillis: 10_000,
   });
   // On Vercel Fluid compute, keeps the instance alive until idle connections are closed
   // (Neon's recommendation for node-postgres there). A no-op on other hosts.
   attachDatabasePool(pool);
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
-  return new PrismaClient({ adapter });
+  return new PrismaClient({
+    adapter,
+    transactionOptions: { maxWait: 1_000, timeout: 5_000 },
+  });
 }
 
 // Reuse one client across hot reloads and warm serverless invocations.

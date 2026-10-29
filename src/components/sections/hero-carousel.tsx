@@ -299,17 +299,8 @@ export function HeroCarousel({ children }: { children: ReactNode }) {
           <span>
             {unavailable
               ? "Regional photographs are currently unavailable."
-              : slide.caption}
+              : slide.location}
           </span>
-          {!unavailable && (
-            <span>
-              <a href={slide.source}>{slide.author}</a> ·{" "}
-              <a href={slide.licenseUrl}>{slide.license}</a>
-            </span>
-          )}
-          <a href="/credits#homepage-photographs">
-            Illustrative regional photography · Credits & modifications
-          </a>
         </div>
         <p className="visually-hidden" aria-live="off">
           {!unavailable && slide.alt} These regional photographs do not document

@@ -1,6 +1,7 @@
 // Cloudflare Turnstile server-side verification: the token must be valid, issued for this
 // site's hostname and for the expected action (`enquiry` or `donation`). Tokens are single-use and never logged.
 export type TurnstileOutcome = "valid" | "invalid" | "unavailable";
+import { fetchJson, type ExecutionBudget } from "@/server/execution-budget";
 
 export async function verifyTurnstile({
   token,
@@ -10,6 +11,7 @@ export async function verifyTurnstile({
   remoteIp,
   action = "enquiry",
   fetchImpl = fetch,
+  budget,
 }: {
   token: string;
   secret: string;
@@ -18,22 +20,23 @@ export async function verifyTurnstile({
   remoteIp?: string;
   action?: "enquiry" | "donation";
   fetchImpl?: typeof fetch;
+  budget?: ExecutionBudget;
 }): Promise<TurnstileOutcome> {
   if (!token) return "invalid";
   try {
     const body = new URLSearchParams({ secret, response: token });
     if (remoteIp) body.set("remoteip", remoteIp);
-    const response = await fetchImpl(verifyUrl, {
-      method: "POST",
-      body,
-      signal: AbortSignal.timeout(10_000),
-    });
+    const { response, body: result } = await fetchJson(
+      fetchImpl,
+      verifyUrl,
+      {
+        method: "POST",
+        body,
+      },
+      10_000,
+      budget,
+    );
     if (!response.ok) return "unavailable";
-    const result = (await response.json()) as {
-      success?: boolean;
-      hostname?: string;
-      action?: string;
-    };
     return result.success === true &&
       result.hostname === hostname &&
       result.action === action

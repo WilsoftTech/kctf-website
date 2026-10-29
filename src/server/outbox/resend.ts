@@ -8,6 +8,7 @@ export type SendResult =
   | { kind: "retryable"; code: string; httpStatus?: number }
   | { kind: "permanent"; code: string; httpStatus?: number };
 
+import { fetchJson, type ExecutionBudget } from "@/server/execution-budget";
 const SAFE_CODE = /^[a-z0-9_]{1,60}$/;
 
 export async function sendWithResend({
@@ -17,6 +18,7 @@ export async function sendWithResend({
   payload,
   fetchImpl = fetch,
   timeoutMs = 10_000,
+  budget,
 }: {
   apiUrl: string;
   apiKey: string;
@@ -24,19 +26,28 @@ export async function sendWithResend({
   payload: object;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  budget?: ExecutionBudget;
 }): Promise<SendResult> {
   let response: Response;
+  let body: { id?: unknown; name?: unknown } = {};
   try {
-    response = await fetchImpl(apiUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey,
+    const result = await fetchJson(
+      fetchImpl,
+      apiUrl,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+      timeoutMs,
+      budget,
+    );
+    response = result.response;
+    body = result.body;
   } catch (error) {
     // The provider may or may not have accepted the message: retry under the same key.
     const name = (error as { name?: string })?.name;
@@ -44,12 +55,6 @@ export async function sendWithResend({
       kind: "retryable",
       code: name === "TimeoutError" ? "provider_timeout" : "provider_network",
     };
-  }
-  let body: { id?: unknown; name?: unknown } = {};
-  try {
-    body = await response.json();
-  } catch {
-    // Non-JSON body: classify by status alone.
   }
   if (response.ok)
     return {

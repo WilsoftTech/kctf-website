@@ -45,4 +45,15 @@ export type DonationStatusResponse = {
   /** Present while the hosted checkout can still be resumed. */
   resumeUrl?: string;
   updatedAt: string;
+  financial?: {
+    collectedMinor: number;
+    refundedMinor: number;
+    reversedMinor: number;
+    pendingRefundMinor: number;
+    refundState: string;
+    disputeState: string;
+    disputedMinor: number;
+    underReview: boolean;
+  };
+  acknowledgement?: string;
 };

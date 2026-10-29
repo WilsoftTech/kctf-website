@@ -1,5 +1,7 @@
 # Configuration and deployment
 
+**29 October 2026 readiness fixes:** [current release/recovery requirements](PRODUCTION-READINESS-2026-10-29.md) supersede earlier sequential-worker and quota descriptions. Apply additive migration `20261029120000_readiness_financial_workers` before application release. Runtime/CLI variables `WORKER_BUDGET_MS` (50000, range 20000–50000), `WORKER_EMAIL_BATCH` (50, 1–100), `WORKER_PAYMENT_BATCH` (20, 1–100) and `WORKER_INTERVAL_SECONDS` (300, 60–86400) are documented in `.env.example`. The interval does not install/change Vercel Cron. Select an eligible five-minute Pro schedule or external scheduler, configure authenticated status monitoring and verify real invocations before launch; daily Hobby Cron remains a fallback. Configure Stripe refund/dispute subscriptions and read permissions as listed in the recovery guide. The fix branch also disables automatic Vercel deployment; no deployment or production migration is authorized by these changes.
+
 Source integration, 29 October 2026: the feature stack has been merged into `main` by user request. Automatic Vercel deployment is disabled for `main` and `feat/homepage-hero-carousel` in `vercel.json` to preserve the no-deployment instruction. Re-enable the intended branch only as part of a separately authorised deployment. Merging does not apply database migrations or enable payment providers.
 
 Added 27 October 2026. Intended host: **Vercel** (Node.js runtime). Any Node host that runs `next start` also works, with `TRUSTED_PROXY=none` and an external scheduler for the outbox.

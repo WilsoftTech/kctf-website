@@ -43,10 +43,11 @@ export const DONATION_LIMITS = {
 export function limitsFor(
   { ip, email }: { ip?: string; email: string },
   secret: string,
-  scope: "enquiry" | "donation" = "enquiry",
+  scope: "enquiry" | "donation" | "draft" = "enquiry",
 ): Limit[] {
   // Enquiry keys keep their original, unprefixed names.
-  const prefix = scope === "donation" ? "pay-" : "";
+  const prefix =
+    scope === "donation" ? "pay-" : scope === "draft" ? "draft-" : "";
   const limits = scope === "donation" ? DONATION_LIMITS : LIMITS;
   return [
     ...(ip ? [{ key: abuseKey(`${prefix}ip`, ip, secret), ...limits.ip }] : []),
@@ -59,9 +60,15 @@ export function limitsFor(
 }
 
 /** Atomically counts this attempt against every limit; false if any limit is exceeded. */
-export async function consumeLimits(db: Database, limits: Limit[]) {
+export async function consumeLimits(
+  db: Pick<Database, "$queryRaw">,
+  limits: Limit[],
+) {
   let allowed = true;
-  for (const { key, limit, windowSeconds } of limits) {
+  // Consistent lock order also prevents deadlocks between concurrent admissions.
+  for (const { key, limit, windowSeconds } of [...limits].sort((a, b) =>
+    a.key.localeCompare(b.key),
+  )) {
     const [row] = await db.$queryRaw<{ count: number }[]>`
       INSERT INTO rate_limit_buckets (key, window_start, count, expires_at)
       VALUES (${key},
@@ -75,4 +82,46 @@ export async function consumeLimits(db: Database, limits: Limit[]) {
     if (row.count > limit) allowed = false;
   }
   return allowed;
+}
+
+export class QuotaExceeded extends Error {
+  constructor() {
+    super("submission_quota_exceeded");
+  }
+}
+
+/** Call inside the same transaction as the accepted record. A denial rolls back
+ * every counter, as do uniqueness races and failed saves. */
+export async function enforceLimits(
+  db: Pick<Database, "$queryRaw">,
+  limits: Limit[],
+) {
+  if (!(await consumeLimits(db, limits))) throw new QuotaExceeded();
+}
+
+/** Separate, short-lived verification quotas. Email rotation cannot bypass these.
+ * Unknown/untrusted network identities share one bucket; forwarding headers are
+ * trusted only under the explicit Vercel deployment contract in clientIp(). */
+export async function admitAttempt(
+  db: Database,
+  ip: string | undefined,
+  secret: string,
+  scope: "enquiry" | "donation" | "draft",
+) {
+  try {
+    await db.$transaction(async (tx) =>
+      enforceLimits(tx, [
+        {
+          key: abuseKey(`a-${scope}-ip`, ip ?? "unknown", secret),
+          limit: 20,
+          windowSeconds: 60,
+        },
+        { key: `attempt-${scope}-global`, limit: 1000, windowSeconds: 60 },
+      ]),
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof QuotaExceeded) return false;
+    throw error;
+  }
 }

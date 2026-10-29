@@ -131,12 +131,7 @@ export function Photo({
       ) : (
         <div className="photo-image">{image}</div>
       )}
-      {credit && (
-        <figcaption>
-          {p.caption} · <a href={p.source}>{p.author}</a> ·{" "}
-          <a href={p.licenseUrl}>{p.license}</a>
-        </figcaption>
-      )}
+      {credit && <figcaption>{p.location}</figcaption>}
     </figure>
   );
 }

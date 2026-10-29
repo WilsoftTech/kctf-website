@@ -6,6 +6,7 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { createServer, type Server } from "node:http";
 import { createRequire } from "node:module";
+import { mkdir, writeFile } from "node:fs/promises";
 import { freePort, startTestDatabase } from "../support/test-database";
 
 const require = createRequire(import.meta.url);
@@ -237,9 +238,17 @@ export default async function globalSetup() {
         // request, so nothing reaches Google.
         GOOGLE_MAPS_EMBED_API_KEY: `AIza${"e2e".repeat(11)}xx`,
       },
-      stdio: "ignore",
+      stdio: ["ignore", "pipe", "pipe"],
     },
   );
+  // Preserve sanitized application errors from the synthetic environment when a
+  // browser assertion fails; otherwise a 503 loses its useful server-side code.
+  let serverLog = "";
+  const capture = (chunk: Buffer) => {
+    serverLog = (serverLog + chunk.toString()).slice(-262144);
+  };
+  server.stdout?.on("data", capture);
+  server.stderr?.on("data", capture);
   try {
     await waitFor(`http://localhost:${E2E_PORT}/robots.txt`, 60_000);
   } catch (error) {
@@ -251,6 +260,8 @@ export default async function globalSetup() {
 
   return async () => {
     stopProcess(server);
+    await mkdir("test-results", { recursive: true });
+    await writeFile("test-results/server.log", serverLog);
     await new Promise((r) => doubles.close(r));
     await database.stop();
   };

@@ -1,5 +1,7 @@
 # Database: Neon PostgreSQL with Prisma
 
+**29 October 2026 update:** additive migration `20261029120000_readiness_financial_workers` adds donation financial totals/version/reconciliation claims, append-only `payment_adjustments` and sanitized `worker_runs`. It backfills original gross/reversal amounts without deleting existing rows; provider adjustment history must be reconciled. Apply the migration before deploying code that selects the new columns. `attachDatabasePool` remains active; connection/query/statement caps are now 3 seconds, interactive transactions 1-second acquisition/5-second execution. See [migration and recovery order](PRODUCTION-READINESS-2026-10-29.md#additive-migration-and-safe-release-order). No application/production database was migrated by this task.
+
 Added 27 October 2026. The website stores online enquiries, their email-outbox jobs and short-lived abuse counters in Neon PostgreSQL through Prisma ORM 7 (`prisma-client` generator, `@prisma/adapter-pg` driver adapter, committed SQL migrations).
 
 ## Schema

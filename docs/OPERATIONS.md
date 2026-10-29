@@ -2,6 +2,8 @@
 
 Added 27 October 2026. This explains how online enquiries are saved and delivered, how to run and recover the outbox, and what the system does not guarantee.
 
+**Superseding update, 29 October 2026:** [production-readiness operations](PRODUCTION-READINESS-2026-10-29.md) is the current reference for budgets, schedules, monitoring and accounting recovery. Existing delivery guarantees and recovery commands below remain applicable.
+
 ## Form modes
 
 `src/server/config.ts` decides the mode on every request:
@@ -19,10 +21,10 @@ Misconfiguration is logged once per distinct problem as `enquiry_config_invalid`
 1. Exact `Origin` match with `SITE_URL`; `application/json` only; body streamed and capped at 16 KB regardless of `Content-Length`; strict UTF-8 and JSON.
 2. Strict Zod validation shared with the browser, including the honeypot and a client-generated UUID `idempotencyKey`.
 3. Mode check (above).
-4. **Replay lookup**: if the key already exists with the same content hash, return `200 received` with the original reference. No second Turnstile check, nothing new written. Same key with different content returns `409`.
-5. **Shared abuse limits** in Postgres: per trusted client IP 5 per 10 minutes, per email 3 per hour, global 100 per hour. Exceeding any returns `429`.
-6. **Turnstile** server verification: success, hostname equals the `SITE_URL` host, action `enquiry`. Outages return `503 unavailable` (not saved).
-7. **One transaction** inserts the enquiry and its `email_outbox` job. Only after commit does the API return `201 received`.
+4. **Pre-verification admission**: separate network (20/minute) and global (1000/minute) limits protect database lookups and verification calls. Draft, online and donation scopes are separate. Email rotation and untrusted forwarding headers do not bypass these counters.
+5. **Replay lookup**: matching key/content returns `200 received` without another Turnstile check or accepted-quota charge. Different content returns `409`. Replays still use admission quota.
+6. **Turnstile** server verification: success, expected hostname and action. Invalid tokens and outages consume admission only, never accepted quotas.
+7. **One transaction** checks/increments accepted quotas (trusted IP 5/10 minutes, email 3/hour, global 100/hour), inserts the enquiry and its outbox job. A denial or failed/duplicate save rolls back all accepted counters. Only commit returns `201 received`. Draft copies have independent accepted quotas and no Turnstile/outbox.
 8. After the response, `after()` runs a small outbox batch so staff are usually notified within seconds.
 
 The visitor is told the enquiry was **received and saved**, with a reference such as `KCTF-1A2B3C4D`. The site never says the email was sent.
@@ -39,7 +41,7 @@ If the transaction outcome is unknown (connection lost during commit), the API r
 
 ## Client IP trust
 
-`TRUSTED_PROXY=vercel` reads `x-real-ip` (falling back to the first `x-forwarded-for` entry). Vercel documents that it overwrites these headers with the connecting client's address, so visitors cannot spoof them on Vercel. Any other value (`none`, the default) ignores forwarded headers completely and skips per-IP limits; per-email and global limits still apply. Do not set `vercel` behind another proxy or on another host.
+`TRUSTED_PROXY=vercel` reads `x-real-ip` (falling back to the first `x-forwarded-for` entry) under Vercel's connecting-address contract. `none` ignores forwarded headers and skips accepted per-IP limits; per-email/global limits remain, and pre-verification callers share the `unknown` network bucket. Do not set `vercel` behind another proxy or on another host.
 
 IP and email values are reduced to `HMAC-SHA256(ABUSE_HASH_SECRET, value)` before storage. Buckets expire after twice their window (at most two hours) and are purged by each worker run and by the retention command.
 
@@ -57,8 +59,8 @@ Built in `src/server/outbox/notification.ts` at send time from the stored enquir
 
 `processOutbox()` in `src/server/outbox/worker.ts`:
 
-- **Bounded batches** (default 10, maximum 50; 3 after a submission, 5 from the HTTP trigger).
-- **Atomic claiming**: one `UPDATE … FROM (SELECT … FOR UPDATE SKIP LOCKED LIMIT n)` sets `processing`, increments `attempts`, stamps `claimed_at` and a random `claim_token`. Concurrent workers skip each other's rows.
+- **Bounded batches** (email-only default 10, maximum 100; 3 after a submission; combined scheduled worker default 50). Deadlines can stop a batch early.
+- **Atomic claiming**: one `UPDATE … FROM (SELECT … FOR UPDATE SKIP LOCKED LIMIT 1)` per job sets `processing`, increments `attempts`, stamps `claimed_at` and a random `claim_token`. Concurrent workers skip each other's rows. A shared budget stops new claims before the deadline; unsent claims are released without an attempt charge.
 - **Fencing**: every completion update matches `id` **and** `claim_token`. A worker whose lease was taken over cannot overwrite the newer result (`outbox_claim_lost` is logged).
 - **Lease and stale-claim recovery**: a `processing` claim older than 10 minutes is reclaimed (`outbox_stale_claim_recovered`). If that claim had used the final attempt, the job becomes `failed` with `lease_expired_after_final_attempt`.
 - **Retries**: timeouts, network errors, HTTP 408/409/429/5xx retry with exponential backoff (1, 2, 4 … minutes, capped at 6 hours, plus up to 20% jitter), up to `max_attempts` (8). Other 4xx responses fail immediately (likely configuration: unverified domain, bad key).
@@ -103,6 +105,6 @@ Delivery is **at least once with provider-side deduplication. It is not exactly 
 
 Online donations (see `docs/DONATIONS.md`) reuse this outbox. On a provider-verified success, the donation and two jobs (`donation-staff-notification`, `donation-acknowledgement`) are written in one transaction. Each job belongs to exactly one enquiry or donation (CHECK constraint). The worker sends a donation job only while the donation is still `succeeded`. Otherwise the job fails with `donation_not_succeeded`. `npm run outbox -- failed` shows `donationId` for donation jobs.
 
-The scheduled `GET /api/outbox/run` first reconciles up to 10 open donations older than 10 minutes with Stripe or Pesapal, then processes the outbox. Its JSON response includes a `payments` summary (`not_configured` while payments are off). Run it by hand with `npm run payments -- reconcile`. Donations in `needs_review` (`npm run payments -- review`) need an operator to compare the provider dashboard with the record. Nothing resolves them automatically.
+The scheduled worker runs email and reconciliation concurrently under one absolute budget; defaults are 50 email jobs and 20 payment checks, including settled-payment refund/dispute recovery. Disabled payments are explicitly skipped; enabled but misconfigured payments fail. Failures/partial runs cannot return healthy results. `npm run worker -- run | status | watch` provides combined recovery/monitoring; `npm run payments -- reconcile` is payment-only. Review mismatches with `npm run payments -- review` and the linked recovery guide.
 
 Payment logs (`donation_*`, `stripe_webhook_*`, `pesapal_ipn_*`) carry donation IDs, statuses and short codes only.

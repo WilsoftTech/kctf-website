@@ -28,7 +28,14 @@ export const ALLOWED_FROM: Record<DonationStatus, readonly DonationStatus[]> = {
   failed: ["created", "pending"],
   cancelled: ["created", "pending"],
   expired: ["created", "pending"],
-  reversed: ["succeeded"],
+  reversed: [
+    "created",
+    "pending",
+    "failed",
+    "cancelled",
+    "expired",
+    "succeeded",
+  ],
   needs_review: [
     "created",
     "pending",
@@ -107,6 +114,7 @@ export async function applyVerifiedStatus(
     where: { id: donation.id, status: { in: [...ALLOWED_FROM[target]] } },
     data: {
       status: target,
+      financialVersion: { increment: 1 },
       lastCheckedAt: now,
       ...(reason
         ? { statusReason: reason }
@@ -117,10 +125,17 @@ export async function applyVerifiedStatus(
         ? { providerPaymentId: status.paymentId }
         : {}),
       ...(target === "succeeded" ? { settledAt: now } : {}),
-      ...(target === "failed" ||
-      target === "expired" ||
-      target === "cancelled" ||
-      target === "reversed"
+      ...(!reason && (target === "succeeded" || target === "reversed")
+        ? { collectedMinor: donation.amountMinor }
+        : {}),
+      ...(target === "reversed"
+        ? {
+            reversedMinor: donation.amountMinor,
+            financialReviewReason: "pesapal_reversal_review",
+            financialCheckedAt: now,
+          }
+        : {}),
+      ...(target === "failed" || target === "expired" || target === "cancelled"
         ? { settledAt: now }
         : {}),
     },
@@ -142,6 +157,21 @@ export async function applyVerifiedStatus(
       skipDuplicates: true,
     });
   }
+  if (target === "reversed")
+    await tx.paymentAdjustment.createMany({
+      data: [
+        {
+          donationId: donation.id,
+          provider: "pesapal",
+          externalId: status.paymentId ?? status.sessionId,
+          kind: "reversal",
+          amountMinor: donation.amountMinor,
+          currency: donation.currency,
+          status: "reversed",
+        },
+      ],
+      skipDuplicates: true,
+    });
   log(target === "needs_review" ? "error" : "info", "donation_status_changed", {
     donationId: donation.id,
     status: target,

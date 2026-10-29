@@ -123,6 +123,7 @@ export const photos: Record<
     src: string;
     alt: string;
     caption: string;
+    location: string;
     author: string;
     source: string;
     license: string;
@@ -133,6 +134,7 @@ export const photos: Record<
     src: "/images/rubirizi-highlands.jpg",
     alt: "Cultivated land, trees and layered hills in Rubirizi, western Uganda.",
     caption: "Rubirizi, western Uganda",
+    location: "Rubirizi, western Uganda",
     author: "NANTUMBWEJ",
     source:
       "https://commons.wikimedia.org/wiki/File:Varied_Landscape_of_Rubirizi_Near_Queen_Elizabeth_National_Park,_Uganda.jpg",
@@ -143,6 +145,7 @@ export const photos: Record<
     src: "/images/kisiizi-falls.jpg",
     alt: "A heritage monument stands beside Kisiizi Falls in Rukungiri.",
     caption: "Kisiizi Falls, Rukungiri District, Uganda",
+    location: "Kisiizi Falls, Rukungiri District, Uganda",
     author: "Shaayflix Dr Shaay",
     source: "https://commons.wikimedia.org/wiki/File:Kisiizi_falls_04.jpg",
     license: "CC BY-SA 4.0",
@@ -152,6 +155,7 @@ export const photos: Record<
     src: "/images/lake-rutoto.jpg",
     alt: "Green vegetation borders Lake Rutoto in western Uganda.",
     caption: "Lake Rutoto, Rubirizi District, Uganda",
+    location: "Lake Rutoto, Rubirizi District, Uganda",
     author: "Cn22760",
     source:
       "https://commons.wikimedia.org/wiki/File:Lake_Rutoto,_Rubirizi_District.jpg",
@@ -162,6 +166,7 @@ export const photos: Record<
     src: "/images/rubirizi-landscape.jpg",
     alt: "Sunlight breaks through clouds over the green landscape of Rubirizi.",
     caption: "Rubirizi, western Uganda, Uganda",
+    location: "Rubirizi, western Uganda",
     author: "NANTUMBWEJ",
     source:
       "https://commons.wikimedia.org/wiki/File:Sunlit_Skies_over_Rubirizi,_Near_Queen_Elizabeth_National_Park,_Uganda_01.jpg",
@@ -172,6 +177,7 @@ export const photos: Record<
     src: "/images/ishasha-lions.jpg",
     alt: "Lions rest in the branches of a fig tree in Ishasha, western Uganda.",
     caption: "Ishasha, Queen Elizabeth National Park, Uganda",
+    location: "Ishasha, Queen Elizabeth National Park, Uganda",
     author: "Charles J. Sharp",
     source:
       "https://commons.wikimedia.org/wiki/File:Tree-climbing_lions_(Panthera_leo)_in_sycamore_fig_(Ficus_sycomorus).jpg",
@@ -182,6 +188,7 @@ export const photos: Record<
     src: "/images/bakiga-ekizino-kanungu.jpg",
     alt: "Bakiga women perform the traditional Ekizino dance in Kanungu.",
     caption: "Bakiga Ekizino dance, Kanungu, Uganda",
+    location: "Kanungu, western Uganda",
     author: "Owobusingye",
     source:
       "https://commons.wikimedia.org/wiki/File:Bakiga_women_dancing_Ekizino_traditional_dance_for_guests_in_Kanungu.jpeg",
@@ -192,6 +199,7 @@ export const photos: Record<
     src: "/images/ishasha-lions.jpg",
     alt: "Lions rest in the branches of a fig tree in Ishasha, western Uganda.",
     caption: "Ishasha, Queen Elizabeth National Park, Uganda",
+    location: "Ishasha, Queen Elizabeth National Park, Uganda",
     author: "Charles J. Sharp",
     source:
       "https://commons.wikimedia.org/wiki/File:Tree-climbing_lions_(Panthera_leo)_in_sycamore_fig_(Ficus_sycomorus).jpg",

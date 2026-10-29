@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { content } from "@/content/repository";
 import { photos } from "@/content/site";
 import { Breadcrumbs } from "@/components/seo/structured-data";
@@ -57,12 +56,8 @@ export default async function Give() {
               <li key={item}>{item}</li>
             ))}
           </ul>
-          <p className="give-credit">
-            {page.photoNote} {photo.caption} ·{" "}
-            <a href={photo.source}>{photo.author}</a> ·{" "}
-            <a href={photo.licenseUrl}>{photo.license}</a> ·{" "}
-            <Link href="/credits">All credits</Link>
-          </p>
+          <p className="give-credit">{photo.location}</p>
+          <p className="visually-hidden">{page.photoNote}</p>
         </div>
       </section>
       <section className="give-panel" aria-label="Donation form">

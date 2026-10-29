@@ -115,14 +115,23 @@ See `docs/SEO.md`. Summary:
 
 ## Outbox processing and recovery
 
+The [29 October production-readiness corrections](docs/PRODUCTION-READINESS-2026-10-29.md) describe the shared execution budget, quota semantics, financial lifecycle, migration and operating requirements. `@vercel/cli-config` uses a scoped Zod 4.6.7 override; the Vercel database-pool lifecycle is retained. CI includes a runtime dependency audit.
+
 ```bash
 npm run outbox -- run        # process pending jobs (loops bounded batches)
 npm run outbox -- status     # counts by status
 npm run outbox -- failed     # failed jobs with error codes (no personal data)
 npm run outbox -- requeue <job-id> | --all-failed
+npm run worker -- run      # bounded email + payment recovery, concurrently
+npm run worker -- status   # backlog, oldest age, failures, scheduling alerts
+npm run worker -- watch --interval-seconds 300 --runs 12
 ```
 
-Jobs run after each submission or confirmed donation, from Vercel Cron (`GET /api/outbox/run` with `Authorization: Bearer $CRON_SECRET`; daily in `vercel.json`, more often where the plan allows) and from the CLI. Claiming uses `FOR UPDATE SKIP LOCKED` with a fenced claim token, retries back off exponentially up to 8 attempts, stale claims are recovered after 10 minutes, and exhausted jobs stay visible as `failed` while the enquiry remains saved. Each scheduled run first reconciles up to 10 open donations with their provider. Delivery is at least once with Resend idempotency (24-hour window), **not exactly once**.
+Jobs run after submissions/confirmed donations (best effort), from authenticated Vercel Cron and from the CLI. The 60-second HTTP worker has a shared 50-second budget: concurrent email/payment phases cap at 45/35 seconds, stop claiming before the deadline and preserve untouched jobs. Claim fencing, stale recovery and retries remain intact. Responses distinguish healthy, partial, degraded and failed runs; protected `/api/outbox/status` exposes backlog and failures. Delivery remains at least once with Resend idempotency (24-hour window).
+
+Daily Cron in `vercel.json` is a Hobby-compatible fallback. Before launch, configure and verify a five-minute external scheduler/supervised worker or an eligible Vercel Pro schedule; the repository does not activate either. `WORKER_INTERVAL_SECONDS` sets monitoring expectations and CLI cadence, not the Vercel cron expression. See the recovery document for capacity planning, alert thresholds and commands.
+
+Accepted-submission quotas now commit only with new records after successful verification; invalid tokens/outages consume separate short admission limits. Drafts have independent quotas. Stripe webhooks use exact-byte bounded reads and authoritative refund/dispute snapshots; original collection, successful/pending refunds, reversals, disputes and email state remain separate. Apply the additive financial/worker migration before releasing this code, then reconcile old records. No real provider refund is initiated by the accounting tools.
 
 ## Retention
 
@@ -132,6 +141,8 @@ See `docs/PRIVACY-RETENTION.md`. No retention period has been approved, so none 
 
 ```bash
 npm ci
+npm audit --omit=dev
+npm ls zod
 npm run typecheck
 npm run lint
 npm run format:check
@@ -151,9 +162,9 @@ Follow `docs/DEPLOYMENT.md` (step-by-step) and resolve the open decisions in `do
 
 ## Content and branding
 
-The homepage uses five new, locally optimised western Uganda photographs in an accessible background carousel (7-second autoplay, 1.2-second crossfades). Slide data and individual credits live in `src/content/hero-slides.ts`; `/credits` includes every slide. Text stays server-rendered and stable, reduced motion defaults to paused, and project heroes keep their single image. See [carousel behaviour and provenance](docs/HERO-CAROUSEL.md), [source metadata](docs/hero-photo-sources.json), and [checks actually performed](docs/VERIFICATION.md). These are illustrative regional photographs, not evidence of KCTF activities or partnerships.
+The homepage uses five new, locally optimised western Uganda photographs in an accessible background carousel (7-second autoplay, 1.2-second crossfades). Slide data and individual credits live in `src/content/hero-slides.ts`; `/credits` includes every slide. Inline image captions show only the location; full source/photographer/licence attribution remains on `/credits`, linked in the footer. Text stays server-rendered and stable, reduced motion defaults to paused, and project heroes keep their single image. See [carousel behaviour and provenance](docs/HERO-CAROUSEL.md), [source metadata](docs/hero-photo-sources.json), and [checks actually performed](docs/VERIFICATION.md). These are illustrative regional photographs, not evidence of KCTF activities or partnerships.
 
-Edit `src/content/site.ts` for contacts, mission, programmes, targets and photo credits, and `src/content/donate.ts` for the giving page, donation page and homepage donation copy; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; keep credits beside photographs and on `/credits`. Font licences are in `docs/licenses/`.
+Edit `src/content/site.ts` for contacts, mission, programmes, targets, photo locations and credits, and `src/content/donate.ts` for the giving page, donation page and homepage donation copy; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; preserve full attribution on `/credits` and its footer link. Font licences are in `docs/licenses/`.
 
 The design source reference is **WilsoftTech/Each-herbarium** at commit `d590ed9584d74c6c466234436fd22e804e9f4bc7`, used read-only. See `docs/DESIGN-SOURCE.md`.
 

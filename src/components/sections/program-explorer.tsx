@@ -46,10 +46,7 @@ export function ProgramExplorer() {
             0{active + 1} / {programmes[active].short}
           </span>
         </div>
-        <figcaption>
-          {current.caption} · <a href={current.source}>{current.author}</a> ·{" "}
-          <a href={current.licenseUrl}>{current.license}</a>
-        </figcaption>
+        <figcaption>{current.location}</figcaption>
       </figure>
     </div>
   );

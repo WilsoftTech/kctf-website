@@ -1,5 +1,7 @@
 # Homepage hero photography and behaviour
 
+Location-caption update, 29 October 2026: inline photograph captions across the site now show location text only, including the active homepage slide. Photographer/source/licence links and the inline credits label have moved out of image captions; full required attribution, source links, licences, modifications and illustrative-use notices remain on `/credits`, accessible through the footer. The slide data and source metadata are retained. Browser expectations now assert active location text and absence of inline source links while continuing to verify all five full credits on `/credits`. Carousel controls, autoplay and image assets are unchanged.
+
 Added 29 October 2026 on `feat/homepage-hero-carousel`. The carousel is an explicit homepage opt-in. Project heroes still use their original photograph and credits. The shared headline, supporting copy, CTA links, typography, header behaviour and initial headline animation are retained. The headline never remounts when slides change.
 
 ## Behaviour
@@ -10,7 +12,7 @@ Added 29 October 2026 on `feat/homepage-hero-carousel`. The carousel is an expli
 - Previous/next, five selectors, counter and pause/play. All buttons have 44px touch targets and visible keyboard focus. The counter and changing photo description do not announce autoplay. Only one server-rendered headline and set of links exists.
 - Pointer hover (mouse), focus anywhere inside the hero, an offscreen hero and a hidden document suspend autoplay. Keyboard focus/interaction sets a persistent pause intent. Play explicitly clears it, but rotation still waits until focus and hover leave the hero. Explicit Pause survives leaving/re-entering the viewport or tab. Temporary suspension restarts a full seven-second interval on resumption.
 - Reduced motion defaults to paused; no drift, crossfade, headline movement or GSAP parallax. Manual selection remains available, and visitors can explicitly opt into Play.
-- No JavaScript: first photograph, credit, headline, supporting copy, CTAs and Discover more link are server-rendered. Controls have the `hidden` attribute until hydration succeeds.
+- No JavaScript: first photograph, location, headline, supporting copy, CTAs and Discover more link are server-rendered. Controls have the `hidden` attribute until hydration succeeds.
 - Only the first image is preloaded. After it decodes, one next neighbour is mounted after a one-second delay while visible. Later images mount on navigation, not as an eager five-image download. Previously requested images stay cached for wrapping. All use `next/image`, `fill` and `sizes="100vw"`, with desktop/mobile focal points in the content registry.
 - A desktop footer row and stacked tablet/mobile footer reserve room for controls and credits; the hero grows with content on short screens rather than clipping its links.
 

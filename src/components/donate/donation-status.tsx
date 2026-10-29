@@ -169,6 +169,45 @@ export function DonationStatusView({
 
   switch (d.status) {
     case "succeeded":
+      if (
+        d.financial &&
+        (d.financial.refundState !== "none" ||
+          d.financial.pendingRefundMinor > 0 ||
+          !["none", "won", "warning_closed"].includes(
+            d.financial.disputeState,
+          ) ||
+          d.financial.underReview)
+      )
+        return (
+          <Panel
+            tone="unconfirmed"
+            title={
+              d.financial.underReview
+                ? "This payment is being checked."
+                : d.financial.refundState === "full"
+                  ? "Your donation has been refunded."
+                  : d.financial.refundState === "partial"
+                    ? "Your donation was partially refunded."
+                    : d.financial.pendingRefundMinor > 0
+                      ? "A refund is pending."
+                      : d.financial.disputeState === "lost"
+                        ? "This payment was disputed."
+                        : "This payment is under review."
+            }
+            headingRef={heading}
+          >
+            {testNote}
+            <p>
+              The original payment remains recorded. Refunded:{" "}
+              {formatAmount(d.financial.refundedMinor, d.currency)}.{" "}
+              {d.financial.pendingRefundMinor > 0 &&
+                `Pending refund: ${formatAmount(d.financial.pendingRefundMinor, d.currency)}.`}{" "}
+              Please contact the foundation about this update; do not pay again.
+            </p>
+            {summary}
+            <Actions />
+          </Panel>
+        );
       return (
         <Panel
           tone="received"
@@ -177,9 +216,15 @@ export function DonationStatusView({
         >
           {testNote}
           <p>
-            The payment provider has confirmed your gift. An acknowledgement
-            will be sent to your email address. It confirms the payment; it is
-            not a tax receipt.
+            The payment provider has confirmed your gift.{" "}
+            {d.acknowledgement === "sent"
+              ? "The acknowledgement was accepted by our email provider; inbox delivery is separate."
+              : d.acknowledgement === "failed"
+                ? "The acknowledgement email needs attention; your payment is still recorded."
+                : d.acknowledgement === "not_queued"
+                  ? "No acknowledgement email is queued. Please contact the foundation if you need confirmation."
+                  : "An acknowledgement is queued separately for email delivery."}{" "}
+            An acknowledgement confirms the payment; it is not a tax receipt.
           </p>
           {summary}
           <Actions />

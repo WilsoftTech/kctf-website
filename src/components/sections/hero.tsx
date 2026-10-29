@@ -81,12 +81,7 @@ export function Hero({
         >
           <span aria-hidden="true">↓</span> Discover more
         </a>
-        <span>
-          {p.caption}
-          <br />
-          <a href={p.source}>{p.author}</a> ·{" "}
-          <a href={p.licenseUrl}>{p.license}</a>
-        </span>
+        <span>{p.location}</span>
       </div>
     </section>
   );

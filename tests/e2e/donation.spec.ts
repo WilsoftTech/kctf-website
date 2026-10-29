@@ -129,10 +129,10 @@ test.describe("layout", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Give hope. Grow a shared future.",
     );
-    await expect(page.locator(".give-credit")).toContainText(
-      "does not show KCTF-funded activities",
+    await expect(page.locator(".give-credit")).toHaveText(
+      "Rubirizi, western Uganda",
     );
-    await expect(page.locator(".give-credit")).toContainText("CC BY-SA 4.0");
+    await expect(page.locator(".give-credit a")).toHaveCount(0);
   });
 
   test("mobile: compact intro stacked above the form, with comfortable targets", async ({

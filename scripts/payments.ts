@@ -45,7 +45,14 @@ try {
   } else if (command === "review") {
     console.table(
       await getDb().donation.findMany({
-        where: { status: "needs_review" },
+        where: {
+          OR: [
+            { status: "needs_review" },
+            { financialReviewReason: { not: null } },
+            { reconcileFailures: { gt: 0 } },
+            { disputeState: { notIn: ["none", "won", "warning_closed"] } },
+          ],
+        },
         select: {
           reference: true,
           provider: true,
@@ -55,10 +62,40 @@ try {
           statusReason: true,
           providerSessionId: true,
           updatedAt: true,
+          collectedMinor: true,
+          refundedMinor: true,
+          reversedMinor: true,
+          disputeState: true,
+          disputedMinor: true,
+          financialReviewReason: true,
+          reconcileFailures: true,
+          lastReconcileError: true,
         },
         orderBy: { updatedAt: "desc" },
         take: 100,
       }),
+    );
+  } else if (command === "record-pesapal-refund") {
+    const textOption = (name: string) => {
+      const i = args.indexOf(name);
+      return i < 0 ? undefined : args[i + 1];
+    };
+    const { recordPesapalRefund } = await import("@/server/payments/manual");
+    console.log(
+      JSON.stringify(
+        await recordPesapalRefund(
+          getDb(),
+          {
+            reference: textOption("--reference"),
+            providerReference: textOption("--provider-reference"),
+            amountMinor: option("--amount-minor", 0),
+            mode: textOption("--mode"),
+            operator: textOption("--operator"),
+            reason: textOption("--reason"),
+          },
+          args.includes("--execute"),
+        ),
+      ),
     );
   } else if (command === "pesapal-ipn") {
     // Registration is a one-off per environment. It uses the credentials and mode in the

@@ -8,12 +8,10 @@ async function expectSlide(page: Page, slide: number) {
   await expect(hero(page).locator(".carousel-counter")).toContainText(
     `${String(slide).padStart(2, "0")} / 05`,
   );
-  await expect(hero(page).locator(".carousel-credit")).toContainText(
-    heroSlides[slide - 1].caption,
+  await expect(hero(page).locator(".carousel-credit")).toHaveText(
+    heroSlides[slide - 1].location,
   );
-  await expect(
-    hero(page).locator(".carousel-credit a").first(),
-  ).toHaveAttribute("href", heroSlides[slide - 1].source);
+  await expect(hero(page).locator(".carousel-credit a")).toHaveCount(0);
 }
 async function leaveHero(page: Page) {
   await page.locator(".brand").focus();
@@ -190,8 +188,8 @@ test("keyboard focus pauses until explicit Play without moving focus or live ann
   await play.focus();
   await page.keyboard.press("Enter");
   await expect(hero(page)).toHaveAttribute("data-playing", "false");
-  // Play stays armed while tabbing through the three credits links and out.
-  for (let step = 0; step < 4; step++) await page.keyboard.press("Tab");
+  // The location-only caption has no focusable links; Tab leaves the hero.
+  await page.keyboard.press("Tab");
   await page.mouse.move(0, 0);
   await expect(hero(page)).toHaveAttribute("data-playing", "true");
 });

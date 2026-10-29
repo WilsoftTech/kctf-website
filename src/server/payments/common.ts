@@ -10,6 +10,7 @@ import type {
 import { createPesapalProvider } from "@/server/payments/pesapal";
 import type { PaymentProvider } from "@/server/payments/provider";
 import { createStripeProvider } from "@/server/payments/stripe";
+import type { ExecutionBudget } from "@/server/execution-budget";
 
 export type PaymentDeps = {
   siteOrigin: string;
@@ -17,18 +18,20 @@ export type PaymentDeps = {
   getDb: () => Database;
   /** Used for Turnstile and provider calls; replaced by doubles in tests. */
   fetchImpl?: typeof fetch;
+  budget?: ExecutionBudget;
 };
 
 export function providerFor(
   config: PaymentsConfig,
   method: PaymentMethodId,
   fetchImpl?: typeof fetch,
+  budget?: ExecutionBudget,
 ): PaymentProvider | undefined {
   const provider = config.methods[method];
   if (!provider) return undefined;
   return provider.provider === "stripe"
-    ? createStripeProvider(provider, fetchImpl)
-    : createPesapalProvider(provider, fetchImpl);
+    ? createStripeProvider(provider, fetchImpl, 15_000, budget)
+    : createPesapalProvider(provider, fetchImpl, 15_000, budget);
 }
 
 /** The provider that created a donation, whatever the method is called today. */
@@ -36,11 +39,13 @@ export function providerById(
   config: PaymentsConfig,
   id: "stripe" | "pesapal",
   fetchImpl?: typeof fetch,
+  budget?: ExecutionBudget,
 ) {
   return providerFor(
     config,
     id === "stripe" ? "card" : "mobile_money",
     fetchImpl,
+    budget,
   );
 }
 

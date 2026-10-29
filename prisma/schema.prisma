@@ -126,45 +126,102 @@ enum DonationStatus {
 /// One online donation attempt. Separate from enquiries: a donation enquiry is never a
 /// payment, and this table never holds card numbers, PINs, OTPs or provider payloads.
 model Donation {
-  id                   String          @id @default(uuid(7)) @db.Uuid
+  id                    String              @id @default(uuid(7)) @db.Uuid
   /// Public reference shown to the donor and sent to the provider (KCTF-D-…).
-  reference            String          @unique @db.VarChar(32)
+  reference             String              @unique @db.VarChar(32)
   /// Client-generated key; uniqueness makes uncertain retries safe.
-  idempotencyKey       String          @unique @map("idempotency_key") @db.Uuid
+  idempotencyKey        String              @unique @map("idempotency_key") @db.Uuid
   /// SHA-256 of the normalised request, used to detect key reuse with different content.
-  requestHash          String          @map("request_hash") @db.Char(64)
+  requestHash           String              @map("request_hash") @db.Char(64)
   /// SHA-256 of the unguessable status-page token; the token itself is never stored.
-  accessTokenHash      String          @unique @map("access_token_hash") @db.Char(64)
-  provider             PaymentProvider
-  method               PaymentMethod
-  mode                 PaymentMode
+  accessTokenHash       String              @unique @map("access_token_hash") @db.Char(64)
+  provider              PaymentProvider
+  method                PaymentMethod
+  mode                  PaymentMode
   /// Amount in the currency's ISO 4217 minor unit (UGX has none, USD has cents).
-  amountMinor          Int             @map("amount_minor")
-  currency             String          @db.Char(3)
-  status               DonationStatus  @default(created)
-  donorName            String          @map("donor_name") @db.VarChar(100)
-  donorEmail           String          @map("donor_email") @db.VarChar(254)
-  message              String?         @db.VarChar(500)
-  privacyNoticeVersion String          @map("privacy_notice_version") @db.VarChar(32)
+  amountMinor           Int                 @map("amount_minor")
+  currency              String              @db.Char(3)
+  status                DonationStatus      @default(created)
+  donorName             String              @map("donor_name") @db.VarChar(100)
+  donorEmail            String              @map("donor_email") @db.VarChar(254)
+  message               String?             @db.VarChar(500)
+  privacyNoticeVersion  String              @map("privacy_notice_version") @db.VarChar(32)
   /// Stripe Checkout Session id or Pesapal OrderTrackingId.
-  providerSessionId    String?         @unique @map("provider_session_id") @db.VarChar(255)
+  providerSessionId     String?             @unique @map("provider_session_id") @db.VarChar(255)
   /// Stripe PaymentIntent id or Pesapal confirmation code, once known.
-  providerPaymentId    String?         @map("provider_payment_id") @db.VarChar(255)
+  providerPaymentId     String?             @map("provider_payment_id") @db.VarChar(255)
   /// Hosted checkout URL, kept so a retried request returns the same checkout.
-  checkoutUrl          String?         @map("checkout_url") @db.VarChar(2048)
+  checkoutUrl           String?             @map("checkout_url") @db.VarChar(2048)
   /// Short code only (e.g. amount_mismatch), never provider text.
-  statusReason         String?         @map("status_reason") @db.VarChar(64)
-  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  statusReason          String?             @map("status_reason") @db.VarChar(64)
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   /// When the provider confirmed the final state.
-  settledAt            DateTime?       @map("settled_at") @db.Timestamptz(3)
+  settledAt             DateTime?           @map("settled_at") @db.Timestamptz(3)
   /// Last time the server asked the provider for the status (reconciliation throttle).
-  lastCheckedAt        DateTime?       @map("last_checked_at") @db.Timestamptz(3)
-  outbox               EmailOutbox[]
-  events               PaymentEvent[]
+  lastCheckedAt         DateTime?           @map("last_checked_at") @db.Timestamptz(3)
+  outbox                EmailOutbox[]
+  events                PaymentEvent[]
+  collectedMinor        Int                 @default(0) @map("collected_minor")
+  refundedMinor         Int                 @default(0) @map("refunded_minor")
+  pendingRefundMinor    Int                 @default(0) @map("pending_refund_minor")
+  reversedMinor         Int                 @default(0) @map("reversed_minor")
+  refundState           String              @default("none") @map("refund_state") @db.VarChar(16)
+  disputeState          String              @default("none") @map("dispute_state") @db.VarChar(32)
+  disputedMinor         Int                 @default(0) @map("disputed_minor")
+  financialVersion      Int                 @default(0) @map("financial_version")
+  financialCheckedAt    DateTime?           @map("financial_checked_at") @db.Timestamptz(3)
+  financialReviewReason String?             @map("financial_review_reason") @db.VarChar(64)
+  reconcileClaimToken   String?             @map("reconcile_claim_token") @db.Uuid
+  reconcileClaimedAt    DateTime?           @map("reconcile_claimed_at") @db.Timestamptz(3)
+  reconcileFailures     Int                 @default(0) @map("reconcile_failures")
+  lastReconcileError    String?             @map("last_reconcile_error") @db.VarChar(64)
+  adjustments           PaymentAdjustment[]
 
   @@index([status, createdAt])
+  @@index([financialCheckedAt])
   @@map("donations")
+}
+
+/// Append-only financial observations, not payment or notification state.
+/// Repeated provider snapshots deduplicate; changes preserve earlier observations.
+model PaymentAdjustment {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  donationId        String          @map("donation_id") @db.Uuid
+  donation          Donation        @relation(fields: [donationId], references: [id], onDelete: Restrict)
+  provider          PaymentProvider
+  externalId        String          @map("external_id") @db.VarChar(255)
+  kind              String          @db.VarChar(16)
+  amountMinor       Int             @map("amount_minor")
+  currency          String          @db.Char(3)
+  status            String          @db.VarChar(32)
+  source            String          @default("provider") @db.VarChar(16)
+  recordedBy        String?         @map("recorded_by") @db.VarChar(64)
+  reason            String?         @db.VarChar(64)
+  providerCreatedAt DateTime?       @map("provider_created_at") @db.Timestamptz(3)
+  observedAt        DateTime        @default(now()) @map("observed_at") @db.Timestamptz(3)
+
+  @@unique([provider, externalId, status, amountMinor], map: "payment_adjustment_observation_key")
+  @@index([donationId])
+  @@map("payment_adjustments")
+}
+
+/// Sanitised worker outcomes; no payloads, credentials or personal data.
+model WorkerRun {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  startedAt      DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(3)
+  status         String    @default("running") @db.VarChar(16)
+  sent           Int       @default(0)
+  retried        Int       @default(0)
+  failed         Int       @default(0)
+  paymentChecked Int       @default(0) @map("payment_checked")
+  paymentFailed  Int       @default(0) @map("payment_failed")
+  durationMs     Int       @default(0) @map("duration_ms")
+  code           String?   @db.VarChar(64)
+
+  @@index([startedAt])
+  @@map("worker_runs")
 }
 
 /// Provider notifications already processed. The unique key stops a redelivered webhook

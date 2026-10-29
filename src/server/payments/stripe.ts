@@ -6,6 +6,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { DonationCurrency } from "@/lib/donation-options";
 import type { StripeConfig } from "@/server/payments/config";
+import { fetchJson, type ExecutionBudget } from "@/server/execution-budget";
 import {
   retryableStatus,
   safeProviderCode,
@@ -48,7 +49,7 @@ export type SignatureCheck =
  * schemes are ignored. Comparison is constant-time.
  */
 export function verifyStripeSignature(
-  rawBody: string,
+  rawBody: string | Uint8Array,
   header: string | null,
   secret: string,
   nowSeconds = Math.floor(Date.now() / 1000),
@@ -70,7 +71,8 @@ export function verifyStripeSignature(
   if (Math.abs(nowSeconds - timestamp) > toleranceSeconds)
     return { ok: false, reason: "stale" };
   const expected = createHmac("sha256", secret)
-    .update(`${timestamp}.${rawBody}`, "utf8")
+    .update(`${timestamp}.`, "utf8")
+    .update(rawBody)
     .digest();
   const matched = signatures.some((s) =>
     timingSafeEqual(Buffer.from(s, "hex"), expected),
@@ -166,6 +168,7 @@ export function createStripeProvider(
   config: StripeConfig,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 15_000,
+  budget?: ExecutionBudget,
 ): PaymentProvider {
   async function call(
     method: "GET" | "POST",
@@ -179,19 +182,28 @@ export function createStripeProvider(
     const url = new URL(`/v1${path}`, config.apiUrl);
     if (method === "GET" && params) url.search = params.toString();
     let response: Response;
+    let body: StripeSession & { error?: { code?: unknown; type?: unknown } } =
+      {};
     try {
-      response = await fetchImpl(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${config.secretKey}`,
-          ...(method === "POST"
-            ? { "Content-Type": "application/x-www-form-urlencoded" }
-            : {}),
-          ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+      const result = await fetchJson(
+        fetchImpl,
+        url,
+        {
+          method,
+          headers: {
+            Authorization: `Bearer ${config.secretKey}`,
+            ...(method === "POST"
+              ? { "Content-Type": "application/x-www-form-urlencoded" }
+              : {}),
+            ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+          },
+          body: method === "POST" ? (params?.toString() ?? "") : undefined,
         },
-        body: method === "POST" ? (params?.toString() ?? "") : undefined,
-        signal: AbortSignal.timeout(timeoutMs),
-      });
+        timeoutMs,
+        budget,
+      );
+      response = result.response;
+      body = result.body;
     } catch (error) {
       const name = (error as { name?: string })?.name;
       return {
@@ -199,13 +211,6 @@ export function createStripeProvider(
         retryable: true,
         code: name === "TimeoutError" ? "provider_timeout" : "provider_network",
       };
-    }
-    let body: StripeSession & { error?: { code?: unknown; type?: unknown } } =
-      {};
-    try {
-      body = await response.json();
-    } catch {
-      // Non-JSON body: classify by status alone.
     }
     if (response.ok) return { ok: true, body };
     return {

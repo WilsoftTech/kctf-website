@@ -1,5 +1,7 @@
 # Privacy and retention
 
+**29 October 2026 update:** [production-readiness corrections](PRODUCTION-READINESS-2026-10-29.md) adds independent short-lived HMAC admission/accepted counters, an append-only financial adjustment ledger (including pseudonymous operator/reason codes) and worker summaries. Adjustment records inherit the unresolved donation-financial-record retention policy and are never deleted by enquiry retention. Worker summaries contain counts/codes/IDs rather than submission content and are purged after 30 days by worker maintenance. Webhook bodies/signatures and raw payment payloads are not logged. This does not approve a retention policy or activate collection.
+
 Added 27 October 2026. **No retention period has been approved.** This document describes the mechanism; the foundation must supply the policy.
 
 ## Configuration

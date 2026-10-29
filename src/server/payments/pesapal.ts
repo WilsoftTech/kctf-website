@@ -7,6 +7,7 @@
 // GetTransactionStatus endpoint. Pesapal has no idempotency header; the merchant
 // reference (our donation reference) is unique per order.
 import type { PesapalConfig } from "@/server/payments/config";
+import { fetchJson, type ExecutionBudget } from "@/server/execution-budget";
 import {
   retryableStatus,
   safeProviderCode,
@@ -41,6 +42,7 @@ export function createPesapalProvider(
   config: PesapalConfig,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 15_000,
+  budget?: ExecutionBudget,
 ): PaymentProvider {
   async function request(
     method: "GET" | "POST",
@@ -51,17 +53,25 @@ export function createPesapalProvider(
     { ok: true; body: Json } | { ok: false; retryable: boolean; code: string }
   > {
     let response: Response;
+    let json: Json = {};
     try {
-      response = await fetchImpl(`${config.apiUrl}${path}`, {
-        method,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+      const result = await fetchJson(
+        fetchImpl,
+        `${config.apiUrl}${path}`,
+        {
+          method,
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+          },
+          body: body ? JSON.stringify(body) : undefined,
         },
-        body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.timeout(timeoutMs),
-      });
+        timeoutMs,
+        budget,
+      );
+      response = result.response;
+      json = result.body;
     } catch (error) {
       const name = (error as { name?: string })?.name;
       return {
@@ -70,16 +80,11 @@ export function createPesapalProvider(
         code: name === "TimeoutError" ? "provider_timeout" : "provider_network",
       };
     }
-    let json: Json = {};
-    try {
-      json = await response.json();
-    } catch {
-      // Classify by status alone.
-    }
     // Pesapal reports some errors with HTTP 200 and an `error` object or `status` field.
     const error = json.error as { code?: unknown; error_type?: unknown } | null;
     const status = Number(json.status ?? response.status);
-    if (response.ok && !error && (!json.status || status === 200))
+    const hasError = error && (error.code || error.error_type);
+    if (response.ok && !hasError && (!json.status || status === 200))
       return { ok: true, body: json };
     const httpStatus = response.ok ? status || 500 : response.status;
     return {
@@ -152,8 +157,8 @@ export function createPesapalProvider(
         state,
         // UGX has no minor unit; other currencies are not offered through Pesapal.
         amountMinor:
-          currency === "UGX" && Number.isFinite(amount) && amount > 0
-            ? Math.round(amount)
+          currency === "UGX" && Number.isSafeInteger(amount) && amount > 0
+            ? amount
             : undefined,
         currency,
         reference:

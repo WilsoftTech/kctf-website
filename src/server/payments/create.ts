@@ -6,9 +6,16 @@
 import { createHash } from "node:crypto";
 import { site } from "@/content/site";
 import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
+import { ExecutionBudget } from "@/server/execution-budget";
 import { checkAmount, type DonationCurrency } from "@/lib/donation-options";
 import type { DonationStartResponse } from "@/lib/donation-response";
-import { clientIp, consumeLimits, limitsFor } from "@/server/enquiries/abuse";
+import {
+  clientIp,
+  admitAttempt,
+  enforceLimits,
+  limitsFor,
+  QuotaExceeded,
+} from "@/server/enquiries/abuse";
 import { readLimitedText } from "@/server/enquiries/submit";
 import { verifyTurnstile } from "@/server/enquiries/turnstile";
 import { log, safeErrorCode } from "@/server/log";
@@ -82,7 +89,12 @@ async function checkout(
       reference: donation.reference,
     });
 
-  const provider = providerFor(config, data.method, deps.fetchImpl)!;
+  const provider = providerFor(
+    config,
+    data.method,
+    deps.fetchImpl,
+    deps.budget,
+  )!;
   const created = await provider.createCheckout({
     donationId: donation.id,
     reference: donation.reference,
@@ -161,6 +173,10 @@ export async function startDonation(
   request: Request,
   deps: PaymentDeps,
 ): Promise<StartResult> {
+  deps = {
+    ...deps,
+    budget: deps.budget ?? new ExecutionBudget(25_000, request.signal),
+  };
   if (request.headers.get("origin") !== deps.siteOrigin)
     return result(403, {
       state: "invalid",
@@ -222,6 +238,9 @@ export async function startDonation(
 
   try {
     const db = deps.getDb();
+    const ip = clientIp(request.headers, config.trustedProxy);
+    if (!(await admitAttempt(db, ip, config.abuseHashSecret, "donation")))
+      throw new QuotaExceeded();
     const existing = await db.donation.findUnique({
       where: { idempotencyKey: data.idempotencyKey },
       select: existingSelect,
@@ -236,18 +255,6 @@ export async function startDonation(
       return await checkout(existing, data, config, deps);
     }
 
-    const ip = clientIp(request.headers, config.trustedProxy);
-    const allowed = await consumeLimits(
-      db,
-      limitsFor({ ip, email: data.email }, config.abuseHashSecret, "donation"),
-    );
-    if (!allowed) {
-      log("warn", "donation_rate_limited");
-      return result(429, {
-        state: "rate_limited",
-        message: `Several donations were started recently. Please wait a little and try again. ${talkToUs}`,
-      });
-    }
     const verification = await verifyTurnstile({
       token: data.token,
       secret: config.turnstileSecret,
@@ -256,6 +263,7 @@ export async function startDonation(
       remoteIp: ip,
       action: "donation",
       fetchImpl: deps.fetchImpl,
+      budget: deps.budget,
     });
     if (verification === "unavailable")
       return result(503, {
@@ -273,26 +281,36 @@ export async function startDonation(
     for (let attempt = 0; !created && attempt < 3; attempt++) {
       try {
         const id = crypto.randomUUID();
-        created = await db.donation.create({
-          data: {
-            id,
-            reference: newDonationReference(),
-            idempotencyKey: data.idempotencyKey,
-            requestHash: hash,
-            accessTokenHash: hashAccessToken(
-              accessTokenFor(id, config.abuseHashSecret),
+        created = await db.$transaction(async (tx) => {
+          await enforceLimits(
+            tx,
+            limitsFor(
+              { ip, email: data.email },
+              config.abuseHashSecret,
+              "donation",
             ),
-            provider: method.provider,
-            method: data.method,
-            mode: config.mode,
-            amountMinor: amount.minor,
-            currency: data.currency,
-            donorName: data.name,
-            donorEmail: data.email,
-            message: data.message || null,
-            privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
-          },
-          select: existingSelect,
+          );
+          return tx.donation.create({
+            data: {
+              id,
+              reference: newDonationReference(),
+              idempotencyKey: data.idempotencyKey,
+              requestHash: hash,
+              accessTokenHash: hashAccessToken(
+                accessTokenFor(id, config.abuseHashSecret),
+              ),
+              provider: method.provider,
+              method: data.method,
+              mode: config.mode,
+              amountMinor: amount.minor,
+              currency: data.currency,
+              donorName: data.name,
+              donorEmail: data.email,
+              message: data.message || null,
+              privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+            },
+            select: existingSelect,
+          });
         });
       } catch (error) {
         if ((error as { code?: string })?.code !== "P2002") throw error;
@@ -315,6 +333,11 @@ export async function startDonation(
     log("info", "donation_created", { donationId: created.id });
     return await checkout(created, data, config, deps);
   } catch (error) {
+    if (error instanceof QuotaExceeded)
+      return result(429, {
+        state: "rate_limited",
+        message: `Too many donation attempts. Please wait and try again. ${talkToUs}`,
+      });
     log("error", "donation_start_failed", { code: safeErrorCode(error) });
     return result(503, {
       state: "unconfirmed",

@@ -10,6 +10,14 @@
 // must name a known order (tracking id AND merchant reference), are throttled per order,
 // and only trigger an authenticated GetTransactionStatus query.
 import type { Database } from "@/server/db";
+import { readLimitedBytes } from "@/server/http/body";
+import { ExecutionBudget } from "@/server/execution-budget";
+import {
+  stripeFinancialClient,
+  applyFinancialSnapshot,
+  financialSelect,
+  FinancialUnavailable,
+} from "@/server/payments/financial";
 import { log, safeErrorCode } from "@/server/log";
 import { providerById } from "@/server/payments/common";
 import type {
@@ -28,12 +36,59 @@ import {
 } from "@/server/payments/stripe";
 
 export const MAX_WEBHOOK_BYTES = 262_144;
+export const MAX_PESAPAL_IPN_BYTES = 4096;
 
+export async function parsePesapalBody(
+  request: Request,
+  budget?: ExecutionBudget,
+) {
+  try {
+    const read = await readLimitedBytes(
+      request,
+      MAX_PESAPAL_IPN_BYTES,
+      budget?.requestSignal(8000),
+    );
+    if ("tooLarge" in read) return undefined;
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(read.bytes);
+    if (
+      request.headers.get("content-type")?.includes("application/json") ||
+      text.trim().startsWith("{")
+    ) {
+      const data: unknown = JSON.parse(text);
+      if (!data || typeof data !== "object" || Array.isArray(data))
+        return undefined;
+      if (Object.values(data).some((value) => typeof value !== "string"))
+        return undefined;
+      return new URLSearchParams(data as Record<string, string>);
+    }
+    // URLSearchParams tolerates malformed escapes/UTF-8; validate before parsing.
+    for (const part of text.split("&"))
+      for (const value of part.split("="))
+        decodeURIComponent(value.replaceAll("+", " "));
+    return new URLSearchParams(text);
+  } catch {
+    return undefined;
+  }
+}
+
+export const STRIPE_FINANCIAL_EVENTS = new Set([
+  "charge.refunded",
+  "charge.refund.updated",
+  "refund.created",
+  "refund.updated",
+  "refund.failed",
+  "charge.dispute.created",
+  "charge.dispute.updated",
+  "charge.dispute.closed",
+  "charge.dispute.funds_withdrawn",
+  "charge.dispute.funds_reinstated",
+]);
 export const STRIPE_EVENTS = new Set([
   "checkout.session.completed",
   "checkout.session.async_payment_succeeded",
   "checkout.session.async_payment_failed",
   "checkout.session.expired",
+  ...STRIPE_FINANCIAL_EVENTS,
 ]);
 
 export type WebhookDeps = {
@@ -41,6 +96,7 @@ export type WebhookDeps = {
   getDb: () => Database;
   fetchImpl?: typeof fetch;
   now?: () => number;
+  budget?: ExecutionBudget;
 };
 
 type Reply = { status: number; body: Record<string, unknown> };
@@ -51,26 +107,27 @@ const reply = (status: number, body: Record<string, unknown>): Reply => ({
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function readRaw(request: Request) {
-  if (Number(request.headers.get("content-length") || 0) > MAX_WEBHOOK_BYTES)
-    return undefined;
-  const buffer = await request.arrayBuffer();
-  if (buffer.byteLength > MAX_WEBHOOK_BYTES) return undefined;
-  // Verify the exact bytes Stripe signed, decoded as UTF-8 without normalisation.
-  return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+async function readRaw(request: Request, budget: ExecutionBudget) {
+  const body = await readLimitedBytes(
+    request,
+    MAX_WEBHOOK_BYTES,
+    budget.requestSignal(8000),
+  );
+  return "tooLarge" in body ? undefined : body.bytes;
 }
 
 export async function handleStripeWebhook(
   request: Request,
   deps: WebhookDeps,
 ): Promise<Reply> {
+  const budget = deps.budget ?? new ExecutionBudget(25_000, request.signal);
   const { config } = deps.readConfig();
   const stripe = config?.methods.card;
   if (!config || !stripe) return reply(503, { error: "not_configured" });
 
-  let raw: string | undefined;
+  let raw: Uint8Array | undefined;
   try {
-    raw = await readRaw(request);
+    raw = await readRaw(request, budget);
   } catch {
     raw = undefined;
   }
@@ -94,11 +151,14 @@ export async function handleStripeWebhook(
     data?: { object?: { id?: unknown; client_reference_id?: unknown } };
   };
   try {
-    event = JSON.parse(raw);
+    event = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(raw));
+    if (!event || typeof event !== "object" || Array.isArray(event))
+      return reply(400, { error: "invalid_event" });
   } catch {
     return reply(400, { error: "invalid_json" });
   }
-  const eventId = typeof event.id === "string" ? event.id.slice(0, 255) : "";
+  const eventId =
+    typeof event.id === "string" && event.id.length <= 255 ? event.id : "";
   const type = typeof event.type === "string" ? event.type : "";
   if (!/^evt_[A-Za-z0-9]+$/.test(eventId) || !type)
     return reply(400, { error: "invalid_event" });
@@ -109,6 +169,19 @@ export async function handleStripeWebhook(
     return reply(200, { received: true, ignored: true });
   }
   const sessionId = event.data?.object?.id;
+  if (STRIPE_FINANCIAL_EVENTS.has(type)) {
+    if (typeof sessionId !== "string")
+      return reply(400, { error: "invalid_event" });
+    return handleStripeFinancialEvent(
+      deps.getDb(),
+      config,
+      eventId,
+      type,
+      sessionId,
+      deps,
+      budget,
+    );
+  }
   if (typeof sessionId !== "string" || !STRIPE_SESSION_ID.test(sessionId))
     return reply(400, { error: "invalid_event" });
 
@@ -140,7 +213,7 @@ export async function handleStripeWebhook(
     }
 
     // Authoritative state from Stripe's API, never from the event snapshot.
-    const provider = providerById(config, "stripe", deps.fetchImpl)!;
+    const provider = providerById(config, "stripe", deps.fetchImpl, budget)!;
     const fetched = await provider.fetchStatus(sessionId);
     if (fetched.kind !== "ok") {
       log("warn", "stripe_webhook_status_unavailable", {
@@ -193,6 +266,105 @@ export async function handleStripeWebhook(
       return reply(200, { received: true, duplicate: true });
     log("error", "stripe_webhook_failed", { code: safeErrorCode(error) });
     return reply(500, { error: "processing_failed" });
+  }
+}
+
+async function handleStripeFinancialEvent(
+  db: Database,
+  config: PaymentsConfig,
+  eventId: string,
+  type: string,
+  objectId: string,
+  deps: WebhookDeps,
+  budget: ExecutionBudget,
+): Promise<Reply> {
+  let donationId: string | undefined;
+  try {
+    if (
+      await db.paymentEvent.findUnique({
+        where: { provider_eventId: { provider: "stripe", eventId } },
+        select: { id: true },
+      })
+    )
+      return reply(200, { received: true, duplicate: true });
+    const stripe = config.methods.card;
+    if (!stripe || stripe.provider !== "stripe")
+      return reply(503, { error: "not_configured" });
+    const client = stripeFinancialClient(stripe, deps.fetchImpl, budget);
+    const paymentId = await client.eventPaymentId(type, objectId);
+    let donation = await db.donation.findFirst({
+      where: { provider: "stripe", providerPaymentId: paymentId },
+      select: financialSelect,
+    });
+    if (!donation) {
+      const id = await client.identity(paymentId);
+      if (id)
+        donation = await db.donation.findFirst({
+          where: { id, provider: "stripe" },
+          select: financialSelect,
+        });
+      // Out-of-order financial event: prove this intent also belongs to our Checkout.
+      if (donation) {
+        if (!donation.providerSessionId)
+          throw new FinancialUnavailable("financial_session_missing");
+        const provider = providerById(
+          config,
+          "stripe",
+          deps.fetchImpl,
+          budget,
+        )!;
+        const status = await provider.fetchStatus(donation.providerSessionId);
+        if (status.kind !== "ok" || status.status.paymentId !== paymentId)
+          throw new FinancialUnavailable("financial_session_mismatch");
+      }
+    }
+    if (!donation) {
+      await recordEvent(db, eventId, type, undefined, "unmatched");
+      return reply(200, { received: true, ignored: true });
+    }
+    donationId = donation.id;
+    // Capture the row version before fetching. A stale in-flight response cannot
+    // overwrite a newer financial snapshot, even for distinct concurrent events.
+    const snapshot = await client.snapshot(paymentId);
+    const outcome = await db.$transaction(async (tx) => {
+      await tx.paymentEvent.create({
+        data: {
+          provider: "stripe",
+          eventId,
+          type,
+          donationId,
+          outcome: "processing",
+        },
+      });
+      const result = await applyFinancialSnapshot(tx, donation, snapshot);
+      await tx.paymentEvent.updateMany({
+        where: { provider: "stripe", eventId },
+        data: { outcome: result },
+      });
+      return result;
+    });
+    log("info", "stripe_financial_processed", {
+      donationId,
+      eventType: type,
+      outcome,
+    });
+    return reply(200, { received: true });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002")
+      return reply(200, { received: true, duplicate: true });
+    const code = safeErrorCode(error);
+    if (donationId)
+      await db.donation
+        .updateMany({
+          where: { id: donationId },
+          data: {
+            reconcileFailures: { increment: 1 },
+            lastReconcileError: code,
+          },
+        })
+        .catch(() => {});
+    log("error", "stripe_financial_failed", { donationId, code });
+    return reply(503, { error: "financial_unavailable" });
   }
 }
 
@@ -269,6 +441,7 @@ export async function handlePesapalIpn(
       donation,
       deps.fetchImpl,
       now,
+      deps.budget,
     );
     const ok = fetched?.kind === "ok";
     log(ok ? "info" : "warn", "pesapal_ipn_processed", {

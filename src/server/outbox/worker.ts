@@ -12,9 +12,10 @@ import {
   buildStaffNotification,
 } from "@/server/outbox/notification";
 import { sendWithResend } from "@/server/outbox/resend";
+import { ExecutionBudget } from "@/server/execution-budget";
 
 export const DEFAULT_BATCH_SIZE = 10;
-/** Must comfortably exceed batchSize × provider timeout (10 × 10s). */
+/** Longer than the bounded invocation; expired claims are safe to fence and reclaim. */
 export const DEFAULT_LEASE_SECONDS = 600;
 const BASE_DELAY_MS = 60_000;
 const MAX_DELAY_MS = 6 * 60 * 60_000;
@@ -26,6 +27,7 @@ export type OutboxSummary = {
   failed: number;
   recovered: number;
   lost: number;
+  partial?: boolean;
 };
 
 /** Exponential backoff with up to 20% jitter: 1, 2, 4 … minutes, capped at 6 hours. */
@@ -53,14 +55,16 @@ export async function processOutbox(
     batchSize = DEFAULT_BATCH_SIZE,
     leaseSeconds = DEFAULT_LEASE_SECONDS,
     providerTimeoutMs = 10_000,
+    budget = new ExecutionBudget(45_000),
   }: {
     batchSize?: number;
     leaseSeconds?: number;
     providerTimeoutMs?: number;
+    budget?: ExecutionBudget;
   } = {},
 ): Promise<OutboxSummary> {
   const { db, delivery } = deps;
-  const limit = Math.max(1, Math.min(batchSize, 50));
+  const limit = Math.max(1, Math.min(batchSize, 100));
   const summary: OutboxSummary = {
     claimed: 0,
     sent: 0,
@@ -70,6 +74,7 @@ export async function processOutbox(
     lost: 0,
   };
 
+  if (!budget.canStart(6000)) return { ...summary, partial: true };
   // Stale claims whose final attempt never reported back become visible failures.
   const exhausted = await db.$executeRaw`
     UPDATE email_outbox
@@ -81,7 +86,13 @@ export async function processOutbox(
   summary.failed += exhausted;
 
   const token = randomUUID();
-  const jobs = await db.$queryRaw<ClaimedJob[]>`
+  for (let slot = 0; slot < limit; slot++) {
+    if (!budget.canStart()) {
+      summary.partial = true;
+      break;
+    }
+    // Claim one job at a time. A deadline never strands an entire claimed batch.
+    const jobs = await db.$queryRaw<ClaimedJob[]>`
     WITH due AS (
       SELECT id, status AS previous
         FROM email_outbox
@@ -90,7 +101,7 @@ export async function processOutbox(
            OR (status = 'processing'
                AND claimed_at < now() - make_interval(secs => ${leaseSeconds})))
        ORDER BY next_attempt_at, id
-       LIMIT ${limit}
+       LIMIT ${1}
        FOR UPDATE SKIP LOCKED
     )
     UPDATE email_outbox o
@@ -100,9 +111,9 @@ export async function processOutbox(
      WHERE o.id = due.id
  RETURNING o.id, o.enquiry_id AS "enquiryId", o.donation_id AS "donationId", o.kind, o.attempts,
            o.max_attempts AS "maxAttempts", due.previous::text AS previous`;
-  summary.claimed = jobs.length;
-
-  for (const job of jobs) {
+    const job = jobs[0];
+    if (!job) break;
+    summary.claimed++;
     if (job.previous === "processing") {
       summary.recovered++;
       log("warn", "outbox_stale_claim_recovered", {
@@ -125,12 +136,23 @@ export async function processOutbox(
         where: { id: job.donationId },
       });
       // Only a confirmed donation is ever announced, even if a job exists.
-      if (donation?.status === "succeeded")
+      if (
+        donation?.status === "succeeded" &&
+        donation.refundedMinor === 0 &&
+        donation.pendingRefundMinor === 0 &&
+        donation.reversedMinor === 0 &&
+        ["none", "won", "warning_closed"].includes(donation.disputeState) &&
+        !donation.financialReviewReason
+      )
         payload = buildDonationEmail(job.kind, donation, delivery);
-      else if (donation) missing = "donation_not_succeeded";
+      else if (donation)
+        missing =
+          donation.status !== "succeeded"
+            ? "donation_not_succeeded"
+            : "donation_financial_change";
     }
     if (!payload) {
-      await db.emailOutbox.updateMany({
+      const updated = await db.emailOutbox.updateMany({
         where: fenced,
         data: {
           status: "failed",
@@ -139,10 +161,26 @@ export async function processOutbox(
           claimedAt: null,
         },
       });
-      summary.failed++;
+      if (updated.count) summary.failed++;
+      else summary.lost++;
       continue;
     }
 
+    if (!budget.canStart(6000)) {
+      const released = await db.emailOutbox.updateMany({
+        where: fenced,
+        data: {
+          status: "pending",
+          claimToken: null,
+          claimedAt: null,
+          attempts: { decrement: 1 },
+          nextAttemptAt: new Date(),
+        },
+      });
+      if (!released.count) summary.lost++;
+      summary.partial = true;
+      break;
+    }
     let result: Awaited<ReturnType<typeof sendWithResend>>;
     try {
       result = await sendWithResend({
@@ -152,6 +190,7 @@ export async function processOutbox(
         payload,
         fetchImpl: deps.fetchImpl,
         timeoutMs: providerTimeoutMs,
+        budget,
       });
     } catch (error) {
       result = { kind: "retryable", code: safeErrorCode(error) };

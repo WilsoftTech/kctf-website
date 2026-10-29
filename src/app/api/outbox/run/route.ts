@@ -1,11 +1,10 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-import { readWorkerSecret } from "@/server/config";
-import { runOutbox } from "@/server/outbox/run";
-import { reconcilePayments } from "@/server/payments/reconcile";
+import { workerAuthentication } from "@/server/workers/auth";
+import { runBackgroundWorker } from "@/server/workers/run";
+import { ExecutionBudget } from "@/server/execution-budget";
+import { log, safeErrorCode } from "@/server/log";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Worst case per run: 5 jobs × 10s provider timeout plus a bounded payment
-// reconciliation (10 status checks, usually well under a second each), inside 60s.
+// Parent deadline 50s, phase caps 45s/35s, with reserves for DB and response work.
 export const maxDuration = 60;
 function json(body: object, status: number) {
   return Response.json(body, {
@@ -13,22 +12,29 @@ function json(body: object, status: number) {
     headers: { "Cache-Control": "no-store" },
   });
 }
-function authorised(header: string | null, secret: string) {
-  // Compare fixed-length digests so neither length nor content leaks through timing.
-  const digest = (v: string) => createHash("sha256").update(v).digest();
-  return timingSafeEqual(digest(header ?? ""), digest(`Bearer ${secret}`));
-}
 // Vercel Cron calls GET with `Authorization: Bearer $CRON_SECRET`. POST is accepted for
 // other schedulers. Without a configured secret the endpoint is disabled.
 async function handle(request: Request) {
-  const secret = readWorkerSecret();
-  if (!secret) return json({ error: "Worker trigger is not configured." }, 503);
-  if (!authorised(request.headers.get("authorization"), secret))
-    return json({ error: "Unauthorised." }, 401);
-  // Uncertain donations first, so a confirmation found now is emailed in this run.
-  const payments = await reconcilePayments({ limit: 10 });
-  const result = await runOutbox({ batchSize: 5, purge: true });
-  return json({ ...result, payments }, result.ok ? 200 : 503);
+  const budget = new ExecutionBudget(50_000, request.signal);
+  const auth = workerAuthentication(request);
+  if (auth !== 200)
+    return json(
+      {
+        error:
+          auth === 401 ? "Unauthorised." : "Worker trigger is not configured.",
+      },
+      auth,
+    );
+  try {
+    const result = await runBackgroundWorker({ budget });
+    return json(
+      result,
+      result.ok ? 200 : result.status === "partial" ? 207 : 503,
+    );
+  } catch (error) {
+    log("error", "worker_failed", { code: safeErrorCode(error) });
+    return json({ ok: false, status: "failed" }, 503);
+  }
 }
 export const GET = handle;
 export const POST = handle;

@@ -1,5 +1,7 @@
 # Donations
 
+**Superseding update, 29 October 2026:** [production-readiness corrections](PRODUCTION-READINESS-2026-10-29.md) adds exact-byte streamed webhook limits, accepted/admission quota separation, bounded concurrent recovery, authoritative Stripe partial/full refunds and disputes, Pesapal reversal review and manual verified-refund accounting. Original collection and email state remain distinct. The new additive migration must precede application release. This update supersedes older statements below about checkout-only Stripe events, open-only reconciliation and sequential scheduled processing. No provider refund/dispute is initiated by tests or the accounting command; real-provider sandbox interoperability remains unverified.
+
 Enquiry-only page added 27 October 2026. Online giving added 28 October 2026 on branch `feature/donation-payments`.
 
 **Status: online giving is built, but switched off by default and has not taken a real payment.** The foundation has chosen **Stripe for cards** and **Pesapal for Mobile Money**. Both stay unavailable until merchant credentials are supplied, and live Stripe also needs an eligible receiving account (see [Provider eligibility](#provider-eligibility)). Donation enquiries keep working whatever the payment configuration is.
@@ -191,10 +193,10 @@ Privacy notice version `2026-10-28c` adds an "Online donations" section (`/priva
 ## Activation checklist (before `PAYMENTS_LIVE_APPROVED=true`)
 
 1. **Legal and organisational:** confirm the foundation may receive donations (registration, NGO Bureau requirements), who the receiving entity is for cards, and how funds are accounted for. Decide what acknowledgements say. No tax relief or receipt may be claimed without verified eligibility.
-2. **Stripe:** an eligible live account (see above), the live restricted key, a webhook endpoint at `https://<domain>/api/payments/stripe/webhook` subscribed to the four `checkout.session.*` events, and the presentment currencies set in `STRIPE_CURRENCIES`.
+2. **Stripe:** an eligible live account (see above), the live restricted key with Checkout/PaymentIntent/charge/refund/dispute read permissions, a webhook endpoint at `https://<domain>/api/payments/stripe/webhook` subscribed to the four existing checkout events **and** the refund/dispute events listed in [the current recovery guide](PRODUCTION-READINESS-2026-10-29.md#webhook-boundaries-and-acknowledgements), and the presentment currencies set in `STRIPE_CURRENCIES`.
 3. **Pesapal:** an approved merchant account, live credentials, the IPN registered for the production URL, confirmed UGX limits (update `currencyRules.UGX`) and settlement.
 4. **Privacy and records:** approve the updated privacy notice and a retention period for donation records, and say who can access them.
-5. **Deploy:** apply the migration, deploy with `PAYMENTS_MODE=live` and keys, and ensure `CRON_SECRET` is set so reconciliation runs.
+5. **Release and recovery:** apply all additive migrations before code release, configure `CRON_SECRET` and worker variables, verify a frequent host-compatible scheduler and authenticated status monitor, and complete authorized provider sandbox checks. Live activation remains a separate approval; source integration does not enable it.
 6. **Authorised live test:** with explicit approval, one small real donation per method. Confirm the status page, webhook/IPN, `npm run payments -- status`, both emails, and the provider dashboards. Refund through the provider dashboard if required.
 
 ## Future CMS

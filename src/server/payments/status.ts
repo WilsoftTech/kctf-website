@@ -20,6 +20,12 @@ import {
   OPEN_STATUSES,
 } from "@/server/payments/state";
 import { accessTokenSchema } from "@/validation/donation";
+import { ExecutionBudget } from "@/server/execution-budget";
+import { randomUUID } from "node:crypto";
+import {
+  reconcileFinancial,
+  financialSelect,
+} from "@/server/payments/financial";
 
 /** Minimum time between provider status checks for one donation. */
 export const CHECK_INTERVAL_MS = 5_000;
@@ -30,13 +36,21 @@ export const RECONCILE_AFTER_MS = 10 * 60_000;
 
 const statusSelect = {
   ...donationRecordSelect,
-  status: true,
   method: true,
-  provider: true,
   checkoutUrl: true,
   createdAt: true,
   updatedAt: true,
   lastCheckedAt: true,
+  ...financialSelect,
+  collectedMinor: true,
+  refundedMinor: true,
+  pendingRefundMinor: true,
+  reversedMinor: true,
+  refundState: true,
+  disputeState: true,
+  disputedMinor: true,
+  financialReviewReason: true,
+  outbox: { select: { kind: true, status: true } },
 } as const;
 
 /** What reconciliation needs to know about a donation. */
@@ -54,6 +68,15 @@ function publicView(row: {
   mode: string;
   checkoutUrl: string | null;
   updatedAt: Date;
+  collectedMinor?: number;
+  refundedMinor?: number;
+  reversedMinor?: number;
+  pendingRefundMinor?: number;
+  refundState?: string;
+  disputeState?: string;
+  disputedMinor?: number;
+  financialReviewReason?: string | null;
+  outbox?: { kind: string; status: string }[];
 }): DonationStatusResponse {
   return {
     reference: row.reference,
@@ -66,6 +89,19 @@ function publicView(row: {
       ? { resumeUrl: row.checkoutUrl }
       : {}),
     updatedAt: row.updatedAt.toISOString(),
+    financial: {
+      collectedMinor: row.collectedMinor ?? 0,
+      refundedMinor: row.refundedMinor ?? 0,
+      reversedMinor: row.reversedMinor ?? 0,
+      pendingRefundMinor: row.pendingRefundMinor ?? 0,
+      refundState: row.refundState ?? "none",
+      disputeState: row.disputeState ?? "none",
+      disputedMinor: row.disputedMinor ?? 0,
+      underReview: !!row.financialReviewReason,
+    },
+    acknowledgement:
+      row.outbox?.find((job) => job.kind === "donation-acknowledgement")
+        ?.status ?? "not_queued",
   };
 }
 
@@ -76,9 +112,10 @@ export async function reconcileDonation(
   donation: ReconcilableDonation,
   fetchImpl?: typeof fetch,
   now = Date.now(),
+  budget?: ExecutionBudget,
 ): Promise<StatusResult | undefined> {
   if (!donation.providerSessionId) return undefined;
-  const provider = providerById(config, donation.provider, fetchImpl);
+  const provider = providerById(config, donation.provider, fetchImpl, budget);
   if (!provider) return undefined;
   const fetched = await provider.fetchStatus(donation.providerSessionId);
   if (fetched.kind !== "ok") {
@@ -97,7 +134,8 @@ export async function reconcileDonation(
     now - donation.createdAt.getTime() > PESAPAL_ABANDON_AFTER_MS
   )
     status = { ...status, state: "expired", code: "not_completed" };
-  await applyStatus(db, donation, status);
+  const applied = await applyStatus(db, donation, status);
+  if (applied.reason) return { kind: "permanent", code: applied.reason };
   return fetched;
 }
 
@@ -213,45 +251,154 @@ export async function cancelDonation(
 export async function reconcileOpenDonations(
   db: Database,
   config: PaymentsConfig,
-  { limit = 20, fetchImpl }: { limit?: number; fetchImpl?: typeof fetch } = {},
+  {
+    limit = 20,
+    fetchImpl,
+    budget = new ExecutionBudget(35_000),
+  }: {
+    limit?: number;
+    fetchImpl?: typeof fetch;
+    budget?: ExecutionBudget;
+  } = {},
 ) {
+  if (!budget.canStart(6000))
+    return { checked: 0, reconciled: 0, failed: 0, closed: 0, partial: true };
   const before = new Date(Date.now() - RECONCILE_AFTER_MS);
-  const rows = await db.donation.findMany({
+  const openRows = await db.donation.findMany({
     where: {
-      status: { in: [...OPEN_STATUSES] },
+      OR: [
+        { status: { in: [...OPEN_STATUSES] } },
+        {
+          status: { in: ["failed", "cancelled", "expired"] },
+          providerSessionId: { not: null },
+          createdAt: { gt: new Date(Date.now() - 30 * 86_400_000) },
+        },
+      ],
       createdAt: { lt: before },
+      AND: [
+        { OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: before } }] },
+      ],
     },
     orderBy: [{ lastCheckedAt: { sort: "asc", nulls: "first" } }],
     take: Math.max(1, Math.min(limit, 100)),
     select: statusSelect,
   });
+  const settledRows = await db.donation.findMany({
+    where: {
+      status: { in: ["succeeded", "reversed", "needs_review"] },
+      providerSessionId: { not: null },
+      OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: before } }],
+    },
+    orderBy: [{ lastCheckedAt: { sort: "asc", nulls: "first" } }],
+    take: Math.max(1, Math.min(limit, 100)),
+    select: statusSelect,
+  });
+  // Interleave classes; an open-checkout backlog cannot hide missed refunds.
+  const rows = Array.from(
+    { length: Math.max(openRows.length, settledRows.length) },
+    (_, i) => [openRows[i], settledRows[i]],
+  )
+    .flat()
+    .filter((row) => row !== undefined)
+    .slice(0, Math.max(1, Math.min(limit, 100)));
   let reconciled = 0;
   let failed = 0;
   let closed = 0;
+  let checked = 0;
+  let partial = false;
   for (const row of rows) {
-    if (!row.providerSessionId) {
-      // The provider call never returned a checkout; after the grace period nobody can
-      // pay it, so it is closed rather than left open forever.
-      await db.donation.updateMany({
-        where: { id: row.id, status: "created" },
-        data: {
-          status: "expired",
-          statusReason: "checkout_not_created",
-          settledAt: new Date(),
-        },
-      });
-      closed++;
-      continue;
+    if (!budget.canStart()) {
+      partial = true;
+      break;
     }
+    const token = randomUUID();
+    const claimed = await db.donation.updateMany({
+      where: {
+        id: row.id,
+        lastCheckedAt: row.lastCheckedAt,
+        OR: [
+          { reconcileClaimToken: null },
+          { reconcileClaimedAt: { lt: new Date(Date.now() - 120_000) } },
+        ],
+      },
+      data: { reconcileClaimToken: token, reconcileClaimedAt: new Date() },
+    });
+    if (!claimed.count) continue;
+    checked++;
     try {
-      const outcome = await reconcileDonation(db, config, row, fetchImpl);
-      if (outcome?.kind === "ok") reconciled++;
-      else failed++;
-    } catch (error) {
-      failed++;
-      log("warn", "donation_reconcile_failed", {
-        donationId: row.id,
-        code: safeErrorCode(error),
+      if (!row.providerSessionId) {
+        // The provider call never returned a checkout; after the grace period nobody can
+        // pay it, so it is closed rather than left open forever.
+        const expired = await db.donation.updateMany({
+          where: { id: row.id, status: "created" },
+          data: {
+            status: "expired",
+            statusReason: "checkout_not_created",
+            settledAt: new Date(),
+            lastCheckedAt: new Date(),
+          },
+        });
+        closed += expired.count;
+        continue;
+      }
+      try {
+        if (
+          row.provider === "stripe" &&
+          !OPEN_STATUSES.includes(row.status) &&
+          row.providerPaymentId
+        ) {
+          const stripe = config.methods.card;
+          if (!stripe || stripe.provider !== "stripe")
+            throw new Error("financial_provider_unconfigured");
+          const outcome = await reconcileFinancial(
+            db,
+            stripe,
+            row,
+            fetchImpl,
+            budget,
+          );
+          if (outcome === "needs_review")
+            throw new Error("financial_identity_mismatch");
+          reconciled++;
+        } else {
+          const outcome = await reconcileDonation(
+            db,
+            config,
+            row,
+            fetchImpl,
+            Date.now(),
+            budget,
+          );
+          if (outcome?.kind === "ok") reconciled++;
+          else throw new Error(outcome?.code ?? "provider_unavailable");
+        }
+        await db.donation.updateMany({
+          where: { id: row.id, reconcileClaimToken: token },
+          data: {
+            lastCheckedAt: new Date(),
+            reconcileFailures: 0,
+            lastReconcileError: null,
+          },
+        });
+      } catch (error) {
+        failed++;
+        await db.donation.updateMany({
+          where: { id: row.id, reconcileClaimToken: token },
+          data: {
+            lastCheckedAt: new Date(),
+            reconcileFailures: { increment: 1 },
+            lastReconcileError: safeErrorCode(error),
+          },
+        });
+        log("warn", "donation_reconcile_failed", {
+          donationId: row.id,
+          code: safeErrorCode(error),
+        });
+      }
+    } finally {
+      await db.donation.updateMany({
+        where: { id: row.id, reconcileClaimToken: token },
+        data: { reconcileClaimToken: null, reconcileClaimedAt: null },
       });
     }
   }
@@ -261,5 +408,11 @@ export async function reconcileOpenDonations(
     failed,
     deleted: closed,
   });
-  return { checked: rows.length, reconciled, failed, closed };
+  return {
+    checked,
+    reconciled,
+    failed,
+    closed,
+    ...(partial ? { partial: true } : {}),
+  };
 }

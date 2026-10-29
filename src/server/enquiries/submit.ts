@@ -9,7 +9,13 @@ import { PRIVACY_NOTICE_VERSION } from "@/content/privacy";
 import type { EnquiryResponse } from "@/lib/enquiry-response";
 import type { DraftConfig, EnquiryConfigResult } from "@/server/config";
 import type { Database } from "@/server/db";
-import { clientIp, consumeLimits, limitsFor } from "@/server/enquiries/abuse";
+import {
+  clientIp,
+  admitAttempt,
+  enforceLimits,
+  limitsFor,
+  QuotaExceeded,
+} from "@/server/enquiries/abuse";
 import { verifyTurnstile } from "@/server/enquiries/turnstile";
 import { log, safeErrorCode } from "@/server/log";
 import {
@@ -17,6 +23,8 @@ import {
   STAFF_NOTIFICATION,
 } from "@/server/outbox/notification";
 import { enquirySchema, type Enquiry } from "@/validation/enquiry";
+import { readLimitedText } from "@/server/http/body";
+export { readLimitedText } from "@/server/http/body";
 
 export const MAX_BODY_BYTES = 16_384;
 
@@ -39,33 +47,6 @@ const result = (status: number, body: EnquiryResponse): SubmitResult => ({
   status,
   body,
 });
-
-/** Reads at most `limit` bytes from the stream, without trusting Content-Length. */
-export async function readLimitedText(request: Request, limit: number) {
-  if (Number(request.headers.get("content-length") || 0) > limit)
-    return { tooLarge: true as const };
-  const reader = request.body?.getReader();
-  if (!reader) return { text: "" };
-  const parts: Uint8Array[] = [];
-  let bytes = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    bytes += value.byteLength;
-    if (bytes > limit) {
-      await reader.cancel();
-      return { tooLarge: true as const };
-    }
-    parts.push(value);
-  }
-  const merged = new Uint8Array(bytes);
-  let offset = 0;
-  for (const part of parts) {
-    merged.set(part, offset);
-    offset += part.byteLength;
-  }
-  return { text: new TextDecoder("utf-8", { fatal: true }).decode(merged) };
-}
 
 export function requestHash(e: Enquiry) {
   return createHash("sha256")
@@ -122,37 +103,39 @@ async function saveDraft(
   let db: Database | undefined;
   try {
     db = deps.getDb();
+    const ip = clientIp(request.headers, config.trustedProxy);
+    if (!(await admitAttempt(db, ip, config.abuseHashSecret, "draft")))
+      throw new QuotaExceeded();
     const replay = await findExisting(db, data);
     if (replay) return replay;
-    const ip = clientIp(request.headers, config.trustedProxy);
-    const allowed = await consumeLimits(
-      db,
-      limitsFor({ ip, email: data.email }, config.abuseHashSecret),
-    );
-    if (!allowed) {
-      log("warn", "enquiry_rate_limited", { channel: data.channel });
-      return result(429, {
-        state: "rate_limited",
-        message:
-          "We have received several enquiries recently, so no copy was saved.",
+    const saved = await db.$transaction(async (tx) => {
+      await enforceLimits(
+        tx,
+        limitsFor({ ip, email: data.email }, config.abuseHashSecret, "draft"),
+      );
+      return tx.enquiry.create({
+        data: {
+          idempotencyKey: data.idempotencyKey,
+          requestHash: requestHash(data),
+          name: data.name,
+          email: data.email,
+          topic: data.topic,
+          channel: "email_draft",
+          message: data.message,
+          privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+        },
+        select: { id: true },
       });
-    }
-    const saved = await db.enquiry.create({
-      data: {
-        idempotencyKey: data.idempotencyKey,
-        requestHash: requestHash(data),
-        name: data.name,
-        email: data.email,
-        topic: data.topic,
-        channel: "email_draft",
-        message: data.message,
-        privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
-      },
-      select: { id: true },
     });
     log("info", "enquiry_draft_saved", { enquiryId: saved.id });
     return received(saved.id, false, data);
   } catch (error) {
+    if (error instanceof QuotaExceeded)
+      return result(429, {
+        state: "rate_limited",
+        message:
+          "Several drafts were prepared recently. Please try again later.",
+      });
     // A concurrent request with the same key committed first.
     if (db && (error as { code?: string })?.code === "P2002") {
       try {
@@ -237,23 +220,13 @@ export async function submitEnquiry(
   let db: Database;
   try {
     db = deps.getDb();
+    const ip = clientIp(request.headers, config.trustedProxy);
+    if (!(await admitAttempt(db, ip, config.abuseHashSecret, "enquiry")))
+      throw new QuotaExceeded();
     const replay = await findExisting(db, data);
     if (replay) {
       log("info", "enquiry_replay", { replay: replay.status === 200 });
       return replay;
-    }
-    const ip = clientIp(request.headers, config.trustedProxy);
-    const allowed = await consumeLimits(
-      db,
-      limitsFor({ ip, email: data.email }, config.abuseHashSecret),
-    );
-    if (!allowed) {
-      log("warn", "enquiry_rate_limited");
-      return result(429, {
-        state: "rate_limited",
-        message:
-          "We have received several enquiries recently. Please wait an hour, or email us directly.",
-      });
     }
     const verification = await verifyTurnstile({
       token: data.token,
@@ -275,6 +248,11 @@ export async function submitEnquiry(
           "The spam-protection check did not succeed. Please complete it again and resubmit.",
       });
   } catch (error) {
+    if (error instanceof QuotaExceeded)
+      return result(429, {
+        state: "rate_limited",
+        message: "Too many attempts. Please wait a minute and try again.",
+      });
     log("error", "enquiry_precheck_failed", { code: safeErrorCode(error) });
     return result(503, {
       state: "unavailable",
@@ -284,6 +262,11 @@ export async function submitEnquiry(
 
   try {
     const enquiry = await db.$transaction(async (tx) => {
+      const ip = clientIp(request.headers, config.trustedProxy);
+      await enforceLimits(
+        tx,
+        limitsFor({ ip, email: data.email }, config.abuseHashSecret),
+      );
       const saved = await tx.enquiry.create({
         data: {
           idempotencyKey: data.idempotencyKey,
@@ -304,6 +287,12 @@ export async function submitEnquiry(
     log("info", "enquiry_saved", { enquiryId: enquiry.id });
     return { ...received(enquiry.id, false, data), queued: true };
   } catch (error) {
+    if (error instanceof QuotaExceeded)
+      return result(429, {
+        state: "rate_limited",
+        message:
+          "Several enquiries were received recently. Please try later or email us directly.",
+      });
     // A concurrent request with the same key committed first.
     if ((error as { code?: string })?.code === "P2002") {
       try {

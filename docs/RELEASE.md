@@ -1,5 +1,9 @@
 # Release notes and launch steps
 
+## 29 October 2026: production-readiness fix branch
+
+`fix/production-readiness` preserves the complete integrated feature stack while fixing the runtime Zod chain, worker deadlines/fairness/reporting, quota exhaustion and streamed webhook bounds. It adds Stripe refund/dispute accounting and missed-event recovery, Pesapal verified-refund accounting, additive migration `20261029120000_readiness_financial_workers`, protected recovery metrics and hosting-independent worker commands. See [current operating/release instructions](PRODUCTION-READINESS-2026-10-29.md) and [actual verification evidence](VERIFICATION.md). Existing historical results below describe earlier revisions. This work must not be merged or deployed as part of the fix task; live providers, hosted scheduling and alerts remain external setup, and real-provider sandbox verification is still required.
+
 ## 29 October 2026: feature stack integrated into `main`
 
 The user authorised merging the database, payments, SEO and carousel changes into `main`. The branches form a linear stack, so fast-forwarding `main` to `feat/homepage-hero-carousel` includes the complete history of `production-readiness-neon-outbox`, `feature/donations-page`, `feature/seo-discoverability` and `feature/donation-payments`, plus the carousel and its follow-up tests. Feature branches are retained.
