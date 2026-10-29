@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { photos } from "@/content/site";
+import { heroSlides, heroPhotoModifications } from "@/content/hero-slides";
 import { metadata } from "@/lib/seo";
 export const generateMetadata = () =>
   metadata(
@@ -28,6 +29,25 @@ export default function Credits() {
           Original files may be resized and re-encoded for performance; layouts
           crop the display area.
         </p>
+        <h2 id="homepage-photographs">Homepage photographs</h2>
+        <p>{heroPhotoModifications}</p>
+        {heroSlides.map((p) => (
+          <article key={p.src}>
+            <h3>{p.caption}</h3>
+            <p>
+              {p.location}. {p.alt}
+            </p>
+            <p>
+              Photograph by <a href={p.source}>{p.author}</a>.{" "}
+              <a href={p.licenseUrl}>{p.license}</a>.
+            </p>
+            <p>{p.verification}</p>
+            <p>
+              <a href={p.source}>View original source and licensing</a>
+            </p>
+          </article>
+        ))}
+        <h2>Other website photographs</h2>
         {unique.map((p) => (
           <article key={p.src}>
             <h2>{p.caption}</h2>

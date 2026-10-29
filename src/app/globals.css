@@ -519,6 +519,222 @@ button:hover .arrow {
 .hero-media img {
   object-position: 50% 40%;
 }
+/* The outer media wrapper belongs to GSAP scroll parallax. Only the inner
+   drift wrapper owns the carousel zoom, so transforms never compete. */
+.hero-carousel {
+  padding: 140px 0 180px;
+}
+.hero-carousel-media {
+  animation: none;
+}
+.carousel-discover {
+  margin-top: 28px;
+}
+.hero-slide,
+.hero-slide-drift {
+  position: absolute;
+  inset: 0;
+}
+.hero-slide {
+  visibility: hidden;
+}
+.hero-slide.is-active,
+.hero-slide.is-outgoing {
+  visibility: visible;
+}
+.hero-slide.is-active {
+  z-index: 2;
+}
+.hero-slide.is-outgoing {
+  z-index: 1;
+}
+.hero-slide.is-entering {
+  animation: hero-crossfade 1.2s ease-in-out both;
+}
+.hero-slide.is-failed {
+  visibility: hidden;
+}
+.hero-slide.is-active .hero-slide-drift,
+.hero-slide.is-outgoing .hero-slide-drift {
+  animation: hero-drift 14s linear both;
+  animation-play-state: paused;
+}
+.hero-carousel[data-playing="true"] .hero-slide-drift {
+  animation-play-state: running;
+}
+.hero-carousel .hero-slide img {
+  object-fit: cover;
+  object-position: var(--hero-position);
+}
+.hero-carousel .hero-shade {
+  background:
+    linear-gradient(0deg, #151a18 0%, #151a1870 28%, #151a1840 75%, #151a1880),
+    linear-gradient(90deg, #151a18d9, #151a1870 70%, #151a1830);
+}
+.carousel-bottom {
+  position: absolute;
+  bottom: 28px;
+  inset-inline: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  color: #f0f3ed;
+}
+.carousel-navigation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid #ffffff45;
+  border-radius: 3px;
+  background: #151a18b3;
+}
+.carousel-navigation[hidden] {
+  display: none;
+}
+.carousel-navigation button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 21px;
+  flex: none;
+}
+.carousel-navigation button:hover {
+  background: #ffffff1c;
+}
+.carousel-navigation button:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+.carousel-navigation button[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+.carousel-counter {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-inline: 6px;
+}
+.carousel-counter > span {
+  color: #c2cbbf;
+  margin-left: 4px;
+}
+.carousel-selectors {
+  display: flex;
+  border-inline-start: 1px solid #ffffff38;
+  margin-inline: 4px;
+  padding-inline-start: 4px;
+}
+.carousel-selectors button {
+  width: 44px;
+}
+.carousel-selectors button > span {
+  width: 6px;
+  height: 6px;
+  background: #d4dbd2;
+  border-radius: 50%;
+  transition: width 0.3s ease;
+}
+.carousel-selectors button[aria-current="true"] > span {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--lime);
+}
+.carousel-credit {
+  display: grid;
+  gap: 2px;
+  max-width: 390px;
+  min-height: 64px;
+  font-size: 10px;
+  line-height: 1.65;
+  text-align: right;
+}
+.carousel-credit a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.carousel-credit > a {
+  color: #c2cbbf;
+}
+@keyframes hero-crossfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes hero-drift {
+  from {
+    transform: scale(1.015);
+  }
+  to {
+    transform: scale(1.065);
+  }
+}
+@media (max-width: 1000px) {
+  .carousel-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .carousel-credit {
+    text-align: left;
+    max-width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .hero.hero-carousel {
+    padding-bottom: 245px;
+  }
+  .hero-carousel .hero-slide img {
+    object-position: var(--hero-mobile-position);
+  }
+  .carousel-bottom {
+    bottom: 24px;
+    gap: 16px;
+  }
+  .carousel-navigation {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px 44px;
+    width: min(100%, 350px);
+    gap: 0;
+  }
+  .carousel-navigation[hidden] {
+    display: none;
+  }
+  .carousel-counter {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: center;
+  }
+  .carousel-selectors {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: center;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .carousel-credit {
+    font-size: 9px;
+    min-height: 60px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel .hero-slide-drift {
+    animation: none;
+    transform: none;
+  }
+}
 .hero-shade {
   position: absolute;
   inset: 0;

@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": { "deploymentEnabled": { "feat/homepage-hero-carousel": false } },
   "crons": [{ "path": "/api/outbox/run", "schedule": "17 6 * * *" }]
 }

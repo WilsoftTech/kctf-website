@@ -1,5 +1,25 @@
 # Verification report
 
+## Homepage hero carousel: 29 October 2026
+
+Branch: `feat/homepage-hero-carousel`, based on local `1dcc5d9` (the fetched `origin/main` is already an ancestor). Existing photographs elsewhere are unchanged. No merge or deployment is authorised; Vercel automatic deployment is disabled for this branch in `vercel.json`.
+
+Completed locally on Windows with Node.js 24:
+
+- `npm run typecheck`: passed.
+- `npm run lint`: passed.
+- `npm run format:check`: passed. Added `endOfLine: auto` to respect existing Windows CRLF and Linux LF checkouts without reformatting unrelated files.
+- `npm test`: 238 passed across 7 unit-test files.
+- `npm run test:integration`: 77 passed across 5 files, using disposable PostgreSQL. The restricted sandbox initially blocked Windows user lookup; the normal local-process run passed.
+- `npm run test:e2e -- hero-carousel.spec.ts`: 18 passed, desktop Chromium 1440×900 and Pixel 7 emulation. This run includes a production build. Final regression and CI results are recorded below when complete.
+- Visual review of all five hero slides at desktop and mobile sizes: readable text, consistent branding, active credits, clear CTAs and controls. The desktop padding was refined to keep controls within a 900px-tall hero. Screenshot outputs are in ignored `test-results/`.
+
+Focused browser checks: five distinct new image paths, all five selectors, arrows and five-to-one wrapping; a complete autoplay loop, hover and explicit pause/play; headline node identity and document-position stability; keyboard focus retention and visible outlines; keyboard pause and explicit Play; offscreen suspension; Page Visibility suspension; reduced-motion manual navigation with no drift/parallax; first-image-only server markup; no-JavaScript CTA navigation and hidden controls; slow-loading replacement retains the current photograph; individual, first and all-image failures; all five credits and licences; 44px targets, no overflow or CTA/control collision; existing project hero uses only its original `ishasha-lions.jpg` photograph.
+
+Tab visibility is exercised with a simulated Page Visibility event in headless Chromium. No physical device, Safari/Firefox or assistive-technology session is claimed. No real donation, email or external form submission is made; the existing full suite uses local payment/enquiry doubles.
+
+Image provenance, verification limits and selection substitutions: [HERO-CAROUSEL.md](HERO-CAROUSEL.md), [raw source metadata and hashes](hero-photo-sources.json). Two community-focused photographs depict tree planting and cooperative dance; the canoe livelihoods scene replaces the unavailable suitable village-dialogue image. Agriculture is not labelled as a verified sustainable method. No AI imagery, EACH photography or existing site photograph is used in the carousel.
+
 ## Donation-payments branch: 28 October 2026
 
 Branch `feature/donation-payments` (from `feature/seo-discoverability`), verified locally on Windows 11. **All payment tests are mocked:** Stripe and Pesapal are local doubles (stateful fakes of the documented endpoints), and browser tests intercept the hosted checkout pages. No Stripe or Pesapal sandbox was contacted, because no credentials exist. No real payment, charge or email was made. Nothing was deployed or merged.

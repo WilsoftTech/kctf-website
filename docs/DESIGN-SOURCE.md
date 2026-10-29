@@ -54,6 +54,8 @@ The approved transparent `KCTF Green Blue Transformation Logo.png` is used witho
 
 ## Photography
 
+Update, 29 October 2026: the **homepage hero only** now uses five newly sourced Commons photographs, downloaded directly without using EACH assets. Original photographs elsewhere and the project hero are retained. The carousel preserves the KCTF composition and stable headline, with independent inner zoom and outer GSAP scroll wrappers. See [HERO-CAROUSEL.md](HERO-CAROUSEL.md) for individual provenance/licences, selection substitutions, controls, motion and responsive behaviour.
+
 Five credited Commons landscape photographs were obtained from EACH's public image directory at the pinned commit, with attribution and licence metadata retained. A separate CC0 lion photograph by Alvinategyeka was sourced from Commons:
 
 https://commons.wikimedia.org/wiki/File:Lion_in_Queen_Elizabeth_National_Park_Uganda_01.jpg

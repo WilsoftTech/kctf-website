@@ -24,6 +24,7 @@ export default function Home() {
   return (
     <>
       <Hero
+        carousel
         title="Protecting nature.|Empowering people."
         description="Together, we can build a future where communities, wildlife and the landscapes we call home thrive."
       />

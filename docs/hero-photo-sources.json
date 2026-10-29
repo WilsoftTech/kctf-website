@@ -1,0 +1,493 @@
+[
+  {
+    "asset": "/images/hero/kazinga-canoes.webp",
+    "retrieved": "2026-10-29T07:14:56.473Z",
+    "source": "https://commons.wikimedia.org/wiki/File:Canoes_at_the_Kazinga_Channel_in_Kasese_district_in_western_Uganda_01.jpg",
+    "revision": {
+      "revid": 968597851,
+      "parentid": 922838576,
+      "timestamp": "2024-12-10T17:48:17Z"
+    },
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Canoes_at_the_Kazinga_Channel_in_Kasese_district_in_western_Uganda_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "originalSha1": "16f1927639f7e8508f8ae646985aa397c598fb9d",
+    "assetSha256": "f79ef87f320458743f931e257ffc7f6eed8d2a7dcdf3fe50dc6e1269a4efdef8",
+    "originalWidth": 4032,
+    "originalHeight": 3024,
+    "bytes": 712116,
+    "metadata": {
+      "DateTime": {
+        "value": "2024-07-18 20:07:19",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Canoes at the Kazinga Channel in Kasese district in western Uganda 01",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Kazinga Channel|Self-published work|Boats in Uganda|Files with coordinates missing SDC location of creation|Images from Wiki Loves Earth 2024|Images from Wiki Loves Earth 2024 in Uganda|Files uploaded by B722N|Images from Wiki Loves Earth missing SDC location of creation|Images from WikiForHumanRights 2024 in Uganda|Images from Wiki Loves Earth 2024 Human Rights and Environment Special Nomination|Uploaded via Campaign:wle-special|Images from Wiki Loves Earth 2024 Human Rights and Environment Special Nomination - other country|Uganda photographs taken on 2024-07-18",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "GPSLatitude": {
+        "value": "-0.111761",
+        "source": "commons-desc-page"
+      },
+      "GPSLongitude": {
+        "value": "30.036214",
+        "source": "commons-desc-page"
+      },
+      "GPSMapDatum": {
+        "value": "WGS-84",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Canoes on the Kazinga Channel which is located in Kasese district in the western region of Uganda are used for both fishing and also transporting tourists putting life jackets to tour and see birds and animals that include crocodiles, elephants",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2024-07-18 18:10:09",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:B722N\" title=\"User:B722N\">B722N</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "modifications": "Auto-oriented, resized to 2400px wide, WebP quality 82; metadata stripped. CSS applies responsive focal crops, a dark overlay and gentle zoom; no generative edits or recolouring."
+  },
+  {
+    "asset": "/images/hero/kasese-tree-planting.webp",
+    "retrieved": "2026-10-29T07:14:58.670Z",
+    "source": "https://commons.wikimedia.org/wiki/File:A_woman_leader_demonstrates_how_tree_planting_can_be_done_on_the_Mountain_slopes.JPG",
+    "revision": {
+      "revid": 808116825,
+      "parentid": 807644349,
+      "timestamp": "2023-10-03T20:48:31Z"
+    },
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/18/A_woman_leader_demonstrates_how_tree_planting_can_be_done_on_the_Mountain_slopes.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "originalSha1": "0e1e13f03b16f64f9e2cce0b9942a25ffdefd3ba",
+    "assetSha256": "86def52e60b5b5a53fe5c064ea821a73637b1ebc3bf8759f01a2002c82a0361d",
+    "originalWidth": 4421,
+    "originalHeight": 2949,
+    "bytes": 968472,
+    "metadata": {
+      "DateTime": {
+        "value": "2018-06-01 18:45:43",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "A woman leader demonstrates how tree planting can be done on the Mountain slopes",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Kasese District|Tree planting in Uganda|Self-published work",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Women can play a significant Role in enhancing community tree planting. A Local council one Chairperson demonstrates how tree planting is done on mountain slopes for sustainable catchment management",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2014-10-24 15:42:33",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Vmusika&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Vmusika (page does not exist)\">Vmusika</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "modifications": "Auto-oriented, resized to 2400px wide, WebP quality 82; metadata stripped. CSS applies responsive focal crops, a dark overlay and gentle zoom; no generative edits or recolouring."
+  },
+  {
+    "asset": "/images/hero/queen-elizabeth-waterbuck.webp",
+    "retrieved": "2026-10-29T07:15:13.555Z",
+    "source": "https://commons.wikimedia.org/wiki/File:069_Waterbuck_at_Queen_Elizabeth_National_Park_Photo_by_Giles_Laurent.jpg",
+    "revision": {
+      "revid": 1237616938,
+      "parentid": 1094846788,
+      "timestamp": "2026-06-24T14:32:01Z"
+    },
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/2/27/069_Waterbuck_at_Queen_Elizabeth_National_Park_Photo_by_Giles_Laurent.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "originalSha1": "8965f934a08e22c69ed1c7260d8ced5384ee9f3a",
+    "assetSha256": "aca2e8264a018b28a36a31d8809178e6cc1a6a28df68e4cc23616f6f767c47d8",
+    "originalWidth": 7061,
+    "originalHeight": 4710,
+    "bytes": 448490,
+    "metadata": {
+      "DateTime": {
+        "value": "2024-07-14 22:17:03",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "069 Waterbuck at Queen Elizabeth National Park Photo by Giles Laurent",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Kasese District|Self-published work|Commons featured desktop backgrounds|Featured pictures by Giles Laurent|Uganda photographs taken on 2022-12-16|Uploaded via Campaign:wle-ug|Images from Wiki Loves Earth 2024|Images from Wiki Loves Earth 2024 in Uganda|Featured pictures from Wiki Loves Earth 2024 in Uganda|Featured pictures of animals in Uganda|Photos by Giles Laurent|Side views of mammals|Bovids looking at viewer|Kobus ellipsiprymnus (male)|Kobus ellipsiprymnus defassa in Queen Elizabeth National Park",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "quality|featured",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "GPSLatitude": {
+        "value": "-0.039944",
+        "source": "commons-desc-page"
+      },
+      "GPSLongitude": {
+        "value": "30.086111",
+        "source": "commons-desc-page"
+      },
+      "GPSMapDatum": {
+        "value": "WGS-84",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Waterbuck (<i>Kobus ellipsiprymnus</i>) in Queen Elizabeth National Park, Uganda",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2022-12-16 15:25:47",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>, from <a rel=\"nofollow\" class=\"external text\" href=\"https://gileslaurent.com\">gileslaurent.com</a>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Giles_Laurent\" title=\"User:Giles Laurent\">Giles Laurent</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Attribution": {
+        "value": "© <a href=\"//commons.wikimedia.org/wiki/User:Giles_Laurent\" title=\"User:Giles Laurent\">Giles Laurent</a>, <a rel=\"nofollow\" class=\"external text\" href=\"https://gileslaurent.com\">gileslaurent.com</a>, License CC BY-SA",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "modifications": "Auto-oriented, resized to 2400px wide, WebP quality 82; metadata stripped. CSS applies responsive focal crops, a dark overlay and gentle zoom; no generative edits or recolouring."
+  },
+  {
+    "asset": "/images/hero/kabale-farming.webp",
+    "retrieved": "2026-10-29T07:15:15.602Z",
+    "source": "https://commons.wikimedia.org/wiki/File:Hilly_Agricultural_Landscape_of_Kabale_District,_Uganda.jpg",
+    "revision": {
+      "revid": 1277845910,
+      "parentid": 1277751036,
+      "timestamp": "2026-09-17T16:24:57Z"
+    },
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Hilly_Agricultural_Landscape_of_Kabale_District%2C_Uganda.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "originalSha1": "9bbf76323d404fc6ff72db3a774b7de693b27b36",
+    "assetSha256": "b904e19111c0326cfa4bfed1a5cd4051a86cfec6ae7c95fa8a042644b4d6e064",
+    "originalWidth": 4032,
+    "originalHeight": 1960,
+    "bytes": 216976,
+    "metadata": {
+      "DateTime": {
+        "value": "2026-09-17 12:24:32",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Hilly Agricultural Landscape of Kabale District, Uganda",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "CC-Zero|Self-published work|Agriculture in kabale",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "A view of the cultivated hills and settlement of Kabale District, Uganda, with banana plantations in the foreground.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "17-09-2026 15:22:40",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Elivis256\" title=\"User:Elivis256\">Elivis256</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Zero, Public Domain Dedication",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "false",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "modifications": "Auto-oriented, resized to 2400px wide, WebP quality 82; metadata stripped. CSS applies responsive focal crops, a dark overlay and gentle zoom; no generative edits or recolouring."
+  },
+  {
+    "asset": "/images/hero/rushaga-cooperative.webp",
+    "retrieved": "2026-10-29T07:15:28.508Z",
+    "source": "https://commons.wikimedia.org/wiki/File:Rakiga_women_from_the_village_of_Rushaga_in_Uganda_dance_in_the_village%27s_tourist_center_(12).jpg",
+    "revision": {
+      "revid": 800606908,
+      "parentid": 795358731,
+      "timestamp": "2023-09-11T12:25:22Z"
+    },
+    "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/48/Rakiga_women_from_the_village_of_Rushaga_in_Uganda_dance_in_the_village%27s_tourist_center_%2812%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "originalSha1": "71116dc601679d21e4475f8e997bc5a75bc9677e",
+    "assetSha256": "2934db7ad05c3736931ba2b53285ebe69bdddcd6f112a63a68041155bb7f1c2f",
+    "originalWidth": 4000,
+    "originalHeight": 2252,
+    "bytes": 291552,
+    "metadata": {
+      "DateTime": {
+        "value": "2023-08-23 14:37:36",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Rakiga women from the village of Rushaga in Uganda dance in the village's tourist center (12)",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Rushaga, Uganda|Self-published work",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "נשות רקיגה חברות בקואופרטיב נשים בכפר רושאגה באוגנדה על גבול הפארק הלאומי הבלתי חדיר ביווינדי רוקדות לתיירים במרכז התרבות של הכפר המוכר את התוצרת שלהם לתיירים.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2023-08-11 17:28:02",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Hanay\" title=\"User:Hanay\">Hanay</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "modifications": "Auto-oriented, resized to 2400px wide, WebP quality 82; metadata stripped. CSS applies responsive focal crops, a dark overlay and gentle zoom; no generative edits or recolouring."
+  }
+]

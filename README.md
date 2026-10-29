@@ -151,6 +151,8 @@ Follow `docs/DEPLOYMENT.md` (step-by-step) and resolve the open decisions in `do
 
 ## Content and branding
 
+The homepage uses five new, locally optimised western Uganda photographs in an accessible background carousel (7-second autoplay, 1.2-second crossfades). Slide data and individual credits live in `src/content/hero-slides.ts`; `/credits` includes every slide. Text stays server-rendered and stable, reduced motion defaults to paused, and project heroes keep their single image. See [carousel behaviour and provenance](docs/HERO-CAROUSEL.md), [source metadata](docs/hero-photo-sources.json), and [checks actually performed](docs/VERIFICATION.md). These are illustrative regional photographs, not evidence of KCTF activities or partnerships.
+
 Edit `src/content/site.ts` for contacts, mission, programmes, targets and photo credits, and `src/content/donate.ts` for the giving page, donation page and homepage donation copy; page narratives are in `src/app/**/page.tsx`; theme and responsive rules in `src/app/globals.css`. The approved logo is unaltered at `public/brand/kctf-logo.png`; in the header it shows white over the transparent hero header and in full colour once the header turns solid. Photographs are illustrative, not evidence of KCTF activities; keep credits beside photographs and on `/credits`. Font licences are in `docs/licenses/`.
 
 The design source reference is **WilsoftTech/Each-herbarium** at commit `d590ed9584d74c6c466234436fd22e804e9f4bc7`, used read-only. See `docs/DESIGN-SOURCE.md`.
