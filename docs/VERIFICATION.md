@@ -8,10 +8,15 @@ Completed locally on Windows with Node.js 24:
 
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
+- `npm run build`: final local production build with the checkout’s normal `.env.local` settings passed after the test suite; all 18 static pages generated successfully.
 - `npm run format:check`: passed. Added `endOfLine: auto` to respect existing Windows CRLF and Linux LF checkouts without reformatting unrelated files.
 - `npm test`: 238 passed across 7 unit-test files.
 - `npm run test:integration`: 77 passed across 5 files, using disposable PostgreSQL. The restricted sandbox initially blocked Windows user lookup; the normal local-process run passed.
-- `npm run test:e2e -- hero-carousel.spec.ts`: 18 passed, desktop Chromium 1440×900 and Pixel 7 emulation. This run includes a production build. Final regression and CI results are recorded below when complete.
+- `npm run test:e2e -- hero-carousel.spec.ts`: initial focused run, 18 passed, desktop Chromium 1440×900 and Pixel 7 emulation.
+- `npm run test:e2e`: final full regression, **126 passed, 32 intentionally skipped, 0 failed**, including a production build, axe scans, navigation, donation and enquiry flows against local doubles. The final carousel coverage also checks 320×568, 768×1024 and 1024×768 layouts and keyboard Play followed by tabbing out. Skips cover viewport-specific or identical server-markup cases.
+- Additional Playwright diagnostic with JavaScript disabled in Desktop Chrome and Pixel 7 contexts: first image successfully decoded, exactly one hero photograph preload (the logo also has its own preload), controls hidden, server-rendered headline/copy and working secondary CTA to `/get-involved`. No-JavaScript primary CTA navigation to `/programmes` is covered by the suite.
+- All five downloaded asset SHA-256 hashes match the source provenance record.
+- [GitHub Actions run 40836283015](https://github.com/WilsoftTech/kctf-website/actions/runs/40836283015), implementation commit `4c170ff`: **passed** on Ubuntu/Node 24. Completed install, TypeScript, lint, formatting, 238 unit tests, 77 integration tests, 126 browser tests (32 intentional skips), and the final production build. A following documentation-only commit records these results.
 - Visual review of all five hero slides at desktop and mobile sizes: readable text, consistent branding, active credits, clear CTAs and controls. The desktop padding was refined to keep controls within a 900px-tall hero. Screenshot outputs are in ignored `test-results/`.
 
 Focused browser checks: five distinct new image paths, all five selectors, arrows and five-to-one wrapping; a complete autoplay loop, hover and explicit pause/play; headline node identity and document-position stability; keyboard focus retention and visible outlines; keyboard pause and explicit Play; offscreen suspension; Page Visibility suspension; reduced-motion manual navigation with no drift/parallax; first-image-only server markup; no-JavaScript CTA navigation and hidden controls; slow-loading replacement retains the current photograph; individual, first and all-image failures; all five credits and licences; 44px targets, no overflow or CTA/control collision; existing project hero uses only its original `ishasha-lions.jpg` photograph.
