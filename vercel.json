@@ -3,6 +3,7 @@
   "git": {
     "deploymentEnabled": {
       "main": false,
+      "fix/production-readiness": false,
       "feat/homepage-hero-carousel": false
     }
   },
