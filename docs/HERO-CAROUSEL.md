@@ -4,6 +4,7 @@ Added 29 October 2026 on `feat/homepage-hero-carousel`. The carousel is an expli
 
 ## Behaviour
 
+- On a fresh page visit or reload, autoplay is enabled automatically for visitors without a reduced-motion preference; no Play click is needed. It starts once the hero is visible in an active tab. Mouse hover and keyboard focus still suspend rotation, as required; reduced motion defaults to paused.
 - Five backgrounds; seven seconds between autoplay changes, with a 1.2-second incoming crossfade over the still-opaque previous photograph. Only a successfully decoded image can replace the current image. A failed slide is skipped; if all fail, the dark background, text and CTAs remain usable.
 - Gentle 1.015–1.065 scale over 14 seconds. The inner `.hero-slide-drift` owns this transform; GSAP continues to own only the outer `[data-hero-media]` scroll transform. The previous CSS settle animation is disabled only on the homepage carousel wrapper.
 - Previous/next, five selectors, counter and pause/play. All buttons have 44px touch targets and visible keyboard focus. The counter and changing photo description do not announce autoplay. Only one server-rendered headline and set of links exists.

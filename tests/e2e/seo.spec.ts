@@ -233,13 +233,35 @@ test.describe("contact map", () => {
     const blocked = await page.evaluate(
       () =>
         new Promise<string>((resolve) => {
-          document.addEventListener("securitypolicyviolation", (e) =>
-            resolve(`${e.violatedDirective} ${e.blockedURI}`),
-          );
           const frame = document.createElement("iframe");
+          const finish = (result: string) => {
+            clearTimeout(timeout);
+            document.removeEventListener(
+              "securitypolicyviolation",
+              onViolation,
+            );
+            frame.remove();
+            resolve(result);
+          };
+          const onViolation = (event: SecurityPolicyViolationEvent) => {
+            // Browser automation can also emit script-src/eval violations.
+            // Only the actual frame-policy event answers this assertion.
+            if (event.effectiveDirective === "frame-src")
+              finish(`${event.violatedDirective} ${event.blockedURI}`);
+          };
+          const timeout = setTimeout(() => finish("not blocked"), 3000);
+          document.addEventListener("securitypolicyviolation", onViolation);
+          // Make the unrelated-event race deterministic instead of relying on
+          // whether this Chromium run emits its own script-policy event.
+          document.dispatchEvent(
+            new SecurityPolicyViolationEvent("securitypolicyviolation", {
+              effectiveDirective: "script-src",
+              violatedDirective: "script-src",
+              blockedURI: "eval",
+            }),
+          );
           frame.src = "https://www.google.com/maps?q=Rukungiri&output=embed";
           document.body.append(frame);
-          setTimeout(() => resolve("not blocked"), 3000);
         }),
     );
     expect(blocked).toMatch(/^frame-src https:\/\/www\.google\.com/);
