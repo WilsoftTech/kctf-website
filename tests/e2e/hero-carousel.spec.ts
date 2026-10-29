@@ -99,6 +99,27 @@ test("five distinct photographs, selectors, wrapping, stable text and credits", 
   }
 });
 
+test("autoplay starts on a fresh visit and reload without pressing Play", async ({
+  page,
+}) => {
+  test.setTimeout(40_000);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  for (const visit of ["initial", "reload"]) {
+    if (visit === "initial") await page.goto("/");
+    else await page.reload();
+    await expect(hero(page)).toHaveAttribute("data-playing", "true");
+    await expect(
+      hero(page).getByRole("button", { name: "Pause slideshow" }),
+    ).toBeVisible();
+    await expectSlide(page, 1);
+    // Real browser time: no clock overrides, clicks, focus or pointer movement.
+    await expect(active(page)).toHaveAttribute("data-slide", "2", {
+      timeout: 12_000,
+    });
+    await expectSlide(page, 2);
+  }
+});
+
 test("autoplay, hover pause, full loop and explicit pause", async ({
   page,
   isMobile,
